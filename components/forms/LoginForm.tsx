@@ -12,8 +12,6 @@ import { authService } from "@/lib/services/authService";
 
 const LoginForm = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const from = searchParams.get("from") || "/";
 
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
