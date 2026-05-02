@@ -16,7 +16,7 @@ export default function AuthLayout({
 }>) {
   return (
     <main className="w-full flex">
-      <aside className="w-1/2 bg-[#E5EBF7] hidden md:block h-screen">
+      <aside className="w-1/2 bg-[#F7FAFC] hidden md:block h-screen">
 
         <AuthSlides />
       </aside>

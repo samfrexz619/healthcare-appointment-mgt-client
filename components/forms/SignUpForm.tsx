@@ -85,10 +85,10 @@ const SignUpForm = () => {
         />
       </div>
       <div className='mt-10'>
-        <Button className='bg-[#407CE2] rounded-[32px] w-full h-14 cursor-pointer text-white font-bold'>
+        <Button className='bg-[#0F93A5] rounded-[32px] w-full h-14 cursor-pointer text-white font-bold'>
           Sign Up
         </Button>
-        <p className='text-center mt-2'>Already have an account?  <Link href={'/auth/login'} className='text-[#407CE2] font-semibold'>Sign In</Link></p>
+        <p className='text-center mt-2'>Already have an account?  <Link href={'/auth/login'} className='text-[#0F93A5] font-semibold'>Sign In</Link></p>
       </div>
       <div>
 
