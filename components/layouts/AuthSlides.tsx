@@ -29,9 +29,9 @@ const AuthSlides = () => {
   ]
   return (
     <div className='h-full'>
-      <Link href="/auth/login" className='px-10 pt-8 block pb-6'>
-        <Image src="/images/icons/logo.svg" alt="company logo" width={50} height={50} />
-        <p className='text-xl font-bold text-[#407CE2]'>MediApp</p>
+      <Link href="/" className='px-10 pt-8 flex flex-col items-center pb-6 w-30'>
+        <Image src="/images/icons/logo.svg" alt="company logo" width={50} height={50} className='mx-auto' />
+        <p className='text-xl font-bold text-[#0F93A5]'>MediApp</p>
       </Link>
       <Swiper modules={[Pagination, Autoplay]}
         slidesPerView={1}

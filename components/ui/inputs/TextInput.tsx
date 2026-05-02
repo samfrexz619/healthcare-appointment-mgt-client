@@ -40,7 +40,7 @@ const TextInput: React.FC<TextInputProps> = (props) => {
         "h-14 w-full border rounded-xl relative px-4 transition-all duration-300 flex items-center gap-2",
         error
           ? "border-red-500"
-          : "border-gray-300 focus-within:border-[#407CE2]",
+          : "border-gray-300 focus-within:border-[#0F93A5]",
         showFloatingLabel ? "bg-transparent" : "bg-[#F9FAFB]"
       )}>
         {
