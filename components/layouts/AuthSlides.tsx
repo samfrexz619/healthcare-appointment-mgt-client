@@ -30,7 +30,7 @@ const AuthSlides = () => {
   return (
     <div className='h-full'>
       <Link href="/" className='px-10 pt-8 flex flex-col items-center pb-6 w-30'>
-        <Image src="/images/icons/logo.svg" alt="company logo" width={50} height={50} className='mx-auto' />
+        <Image src="/images/icons/logo.svg" alt="company logo" width={50} height={50} className='mx-auto w-auto h-auto' />
         <p className='text-xl font-bold text-[#0F93A5]'>MediApp</p>
       </Link>
       <Swiper modules={[Pagination, Autoplay]}
@@ -47,7 +47,8 @@ const AuthSlides = () => {
                 alt={slide.text}
                 width={300}
                 height={250}
-                className="object-contain"
+                className="object-contain w-auto h-auto"
+                loading='eager'
               />
               <p className="mt-4 text-xl font-semibold">{slide.text}</p>
             </div>

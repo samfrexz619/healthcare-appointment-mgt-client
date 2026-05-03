@@ -26,9 +26,9 @@ export default function Home() {
         </nav>
       </header>
       <section className=" w-full xl:w-285 mx-auto py-20">
-        <div className="bg-[#E3F0F3] h-12 text-[#0F93A5] font-semibold rounded-4xl flex px-2 items-center gap-4 w-112.5 justify-center mx-auto">
+        <div className="bg-[#E3F0F3] h-12 text-[#0F93A5] font-semibold rounded-4xl flex px-4 items-center w-fit gap-4 justify-center mx-auto">
           <Activity />
-          <p className="text-xl">Hospital Appointment Management</p>
+          <p className="text-xl">Healthcare Appointment Management</p>
         </div>
         <div className="py-10 w-150 mx-auto text-center">
           <h1 className="text-3xl font-bold">
