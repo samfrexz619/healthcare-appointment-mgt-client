@@ -29,7 +29,7 @@ const LoginForm = () => {
     setServerError(null);
     try {
       await authService.login(data.email, data.password);
-      router.push("/");
+      router.push("/dashboard/home");
     } catch (err: any) {
       const message = err?.response?.data?.message;
 
