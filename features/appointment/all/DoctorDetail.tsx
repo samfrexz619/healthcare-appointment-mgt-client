@@ -1,6 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+// import { Button } from '@/components/ui/button'
 import { DoctorInfo } from '@/types/dashboard'
 import AppointmentDateTime from '../AppointmentDateTime';
 
@@ -35,7 +35,7 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
             </div>
           </div>
         </div>
-        <AppointmentDateTime />
+        <AppointmentDateTime doctor={doctor} />
 
       </section>
       <section className=''>

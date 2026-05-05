@@ -102,6 +102,7 @@
   }
 }
 
-.appointment-sheet {
-  min-width: 500px;
+.overlay-review {
+  @apply fixed inset-0 bg-black/60 grid place-items-center;
+  z-index: 100;
 }
