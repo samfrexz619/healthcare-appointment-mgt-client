@@ -52,7 +52,7 @@ const SignUpForm = () => {
     setServerError(null);
 
     try {
-      const { confirmPassword, ...payload } = data as any;
+      const { confirmPassword, ...payload } = data;
       await authService.signup(payload);
 
       // Redirect to login with a message to check email
@@ -189,7 +189,7 @@ const SignUpForm = () => {
             render={({ field }) => (
               <TextInput
                 id="phone"
-                type="tel"
+                type="text"
                 label="Phone (optional)"
                 value={field.value || ""}
                 onChange={field.onChange}

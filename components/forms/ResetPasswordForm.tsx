@@ -8,6 +8,7 @@ import TextInput from "@/components/ui/inputs/TextInput";
 import { Button } from "../ui/button";
 import api from "@/lib/axios";
 import { ResetPasswordFormData, resetPasswordSchema } from "./schema";
+import { AxiosError } from "axios";
 
 const ResetPasswordForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -49,11 +50,15 @@ const ResetPasswordForm = () => {
       setTimeout(() => {
         router.push("/auth/login");
       }, 2000);
-    } catch (err: any) {
-      setServerError(
-        err.response.data.errors[0].msg ||
-          "Reset failed. The link may be expired.",
-      );
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        setServerError(
+          err?.response?.data.errors[0].msg ||
+            "Reset failed. The link may be expired.",
+        );
+      } else {
+        setServerError("Something went wrong.");
+      }
     } finally {
       setIsLoading(false);
     }

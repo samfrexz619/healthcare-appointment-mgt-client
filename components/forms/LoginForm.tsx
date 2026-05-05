@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authService } from "@/lib/services/authService";
+import { AxiosError } from "axios";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -30,10 +31,11 @@ const LoginForm = () => {
     try {
       await authService.login(data.email, data.password);
       router.push("/dashboard/home");
-    } catch (err: any) {
-      const message = err?.response?.data?.message;
-
-      if (message) {
+    } catch (err: unknown) {
+      
+      
+      if (err instanceof AxiosError) {
+        const message = err?.response?.data?.message;
         setServerError(message);
       } else {
         setServerError("Something went wrong. Please try again.");

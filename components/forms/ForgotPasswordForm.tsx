@@ -7,6 +7,7 @@ import { ForgotPasswordFormData, forgotPasswordSchema } from "./schema";
 import TextInput from "@/components/ui/inputs/TextInput";
 import { Button } from "../ui/button";
 import api from "@/lib/axios";
+import { AxiosError } from "axios";
 
 const ForgotPasswordForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -32,12 +33,14 @@ const ForgotPasswordForm = () => {
       });
 
       setSuccessMessage(
-        res?.data?.message || "Password reset link sent to your email."
+        res?.data?.message || "Password reset link sent to your email.",
       );
-    } catch (err: any) {
-      setServerError(
-        err?.response?.data?.message || "Something went wrong."
-      );
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        setServerError(err.response?.data?.message || "Something went wrong.");
+      } else {
+        setServerError("Something went wrong.");
+      }
     } finally {
       setIsLoading(false);
     }
