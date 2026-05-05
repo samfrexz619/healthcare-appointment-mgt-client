@@ -2,6 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { DoctorInfo } from '@/types/dashboard'
+import AppointmentDateTime from '../AppointmentDateTime';
 
 
 
@@ -34,9 +35,8 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
             </div>
           </div>
         </div>
-        <Button className='h-12 bg-[#0F93A5] text-white rounded-[40px] px-4'>
-          Book Appointment
-        </Button>
+        <AppointmentDateTime />
+
       </section>
       <section className=''>
         <div className='flex gap-8'>
