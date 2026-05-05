@@ -48,9 +48,9 @@ const SideNav: React.FC = () => {
 
   return (
     <aside className='w-61.75 h-screen p-4'>
-      <nav className='w-full h-full bg-white rounded-lg py-5'>
+      <nav style={{ borderRadius: "10px" }} className='w-full h-full bg-white rounded-lg py-5'>
         <Link href="/dashboard/home" className="flex w-fit px-4 flex-col items-center">
-          <Image src="/images/icons/logo.svg" alt="logo" width={50} height={50} />
+          <Image src="/images/icons/logo.svg" alt="logo" width={50} height={50} className="w-12.5 h-12.5" loading="eager" />
           <p className="text-xl font-bold text-[#0F93A5]">MediApp</p>
         </Link>
 

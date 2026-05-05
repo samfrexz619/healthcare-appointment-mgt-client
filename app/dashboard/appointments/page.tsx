@@ -1,5 +1,3 @@
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import AppointmentCategoryAll from '@/features/appointment/all/AppointmentCategoryAll'
 
@@ -22,7 +20,7 @@ const AppointmentPage = () => {
       <Tabs defaultValue="all" className="w-full mt-10">
         <TabsList className='gap-3 bg-transparent'>
           {categories.map(category => (
-            <TabsTrigger key={category} value={category} className='px-6 capitalize py-5 rounded-[40px] data-active:text-[#0F93A5] data-active:border-[#0F93A5] bg-white'>{category}</TabsTrigger>
+            <TabsTrigger key={category} value={category} className='px-6 capitalize py-5 rounded-[40px] data-active:text-[#0F93A5] data-active:bg-white data-active:border-[#0F93A5] bg-white'>{category}</TabsTrigger>
           ))}
         </TabsList>
         <AppointmentCategoryAll />

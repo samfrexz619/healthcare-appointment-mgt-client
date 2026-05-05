@@ -12,7 +12,7 @@ interface CategoryCardProp {
 const CategoryCard: React.FC<CategoryCardProp> = (props) => {
   const { info, isActive, onClick } = props
   return (
-    <div onClick={onClick} role='button' className={cn(
+    <div onClick={onClick} role='button' style={{ borderRadius: "6px" }} className={cn(
       "border cursor-pointer rounded-xl p-4",
       isActive
         ? "border-[#0F93A5]"
@@ -24,7 +24,7 @@ const CategoryCard: React.FC<CategoryCardProp> = (props) => {
 
           </div>
           <div className='flex items-center w-11 justify-center gap-1 bg-white rounded-md p-1 absolute left-1/2 -translate-x-1/2 -bottom-2 shadow-sm'>
-            <Image src="/images/icons/star.png" alt='start' width={10} height={10} />
+            <Image src="/images/icons/star.png" alt='start' width={10} height={10} className="w-2.5 h-2.5" />
             <span className='text-[10px] font-semibold'>{info.rating}</span>
           </div>
         </div>

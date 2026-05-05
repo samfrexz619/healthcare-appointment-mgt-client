@@ -87,7 +87,7 @@ const LoginForm = () => {
         <div className="w-full text-right mt-2">
           <Link
             href="/auth/forgot-password"
-            className="text-[#407CE2] font-semibold"
+            className="text-[#0F93A5] font-semibold"
           >
             Forgot password?
           </Link>
@@ -98,13 +98,13 @@ const LoginForm = () => {
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-[#407CE2] rounded-[32px] w-full h-14 cursor-pointer text-white font-bold disabled:opacity-60 disabled:cursor-not-allowed"
+          className="bg-[#0F93A5] rounded-[32px] w-full h-14 cursor-pointer text-white font-bold disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isLoading ? "Signing in..." : "Sign In"}
         </Button>
         <p className="text-center mt-2">
           Don't have an account?{" "}
-          <Link href="/auth/sign-up" className="text-[#407CE2] font-semibold">
+          <Link href="/auth/sign-up" className="text-[#0F93A5] font-semibold">
             Sign up
           </Link>
         </p>

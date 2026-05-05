@@ -3,6 +3,7 @@ import HeaderBox from "@/components/layouts/HeaderBox";
 import SideNav from "@/components/layouts/SideNav";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import "../globals.css"
 
 export const metadata: Metadata = {
   title: "Healthcare Dashboard",

@@ -3,6 +3,7 @@ import { Metadata } from "next";
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import "../globals.css"
 
 export const metadata: Metadata = {
   title: "Authentication Page",

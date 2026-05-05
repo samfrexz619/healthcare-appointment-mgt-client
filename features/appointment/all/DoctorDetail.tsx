@@ -20,7 +20,7 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
 
             </div>
             <div className='flex items-center w-11 justify-center gap-1 bg-white rounded-md p-1 absolute left-1/2 -translate-x-1/2 -bottom-1 shadow-sm'>
-              <Image src="/images/icons/star.png" alt='start' width={10} height={10} />
+              <Image src="/images/icons/star.png" alt='start' width={10} height={10} className="w-2.5 h-2.5" />
               <span className='text-[10px] font-semibold'>{doctor.rating}</span>
             </div>
           </div>
@@ -65,14 +65,7 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
               <span className="text-xs">Offline at {doctor.hospitalName}</span>
             </li>
           )}
-          {/* <li className='py-1 px-2 bg-gray-100 rounded-md w-fit flex items-center gap-2'>
-            <i className='block size-1.5 rounded-full bg-gray-500'></i>
-            <span className='text-xs'>Online Consultation</span>
-          </li>
-          <li className='py-1 px-2 bg-gray-100 rounded-md w-fit flex items-center gap-2'>
-            <i className='block size-1.5 rounded-full bg-gray-500'></i>
-            <span className='text-xs'>Offline at Doctera Hospital, California</span>
-          </li> */}
+
         </ul>
       </div>
       <section className="space-y-4">
@@ -86,7 +79,7 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
                 <div className="flex items-center text-xs gap-2">
                   <p>{review.reviewDate}</p>
                   <i className="size-1.5 bg-gray-500 rounded-full block" />
-                  <Image src="/images/icons/star.png" alt="star" width={9} height={9} />
+                  <Image src="/images/icons/star.png" alt="star" width={9} height={9} className="w-2.5 h-2.5" />
                   <p>{review.reviewerRating}</p>
                 </div>
               </div>
@@ -96,24 +89,7 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
             </div>
           </div>
         ))}
-        {/* <div className='w-120 border border-gray-300 rounded-lg p-2'>
-          <div className='flex gap-3'>
-            <div className='size-10 rounded-md bg-gray-400'>
-            </div>
-            <div className='space-y-1'>
-              <p className='text-xs text-black font-bold'>Natalia Taylor</p>
-              <div className='flex items-center text-xs gap-2'>
-                <p>03 May, 2026</p>
-                <i className='size-1.5 bg-gray-500 rounded-full block' />
-                <Image src="/images/icons/star.png" alt='star' width={9} height={9} />
-                <p>4.9</p>
-              </div>
-            </div>
-          </div>
-          <div className='mt-3'>
-            <p className='text-xs'>My session with Dr Jhonson truly changed the way i see myself. He's incredibly patient, listens with empathy, and provides practical tools that really work. Highly recommended</p>
-          </div>
-        </div> */}
+
       </section>
     </>
   )
