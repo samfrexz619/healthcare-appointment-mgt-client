@@ -32,8 +32,6 @@ const LoginForm = () => {
       await authService.login(data.email, data.password);
       router.push("/dashboard/home");
     } catch (err: unknown) {
-      
-      
       if (err instanceof AxiosError) {
         const message = err?.response?.data?.message;
         setServerError(message);
@@ -43,6 +41,11 @@ const LoginForm = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+    
   };
 
   return (
@@ -119,7 +122,10 @@ const LoginForm = () => {
           <i className="w-1/2 h-px bg-gray-400 block" />
         </div>
 
-        <div className="border px-5 border-gray-400 rounded-xl h-16 mt-8 flex items-center gap-7 justify-center cursor-pointer hover:bg-gray-50 transition">
+        <div
+          onClick={handleGoogleLogin}
+          className="border px-5 border-gray-400 rounded-xl h-16 mt-8 flex items-center gap-7 justify-center cursor-pointer hover:bg-gray-50 transition"
+        >
           <Image
             src="/images/icons/googleIcon.svg"
             width={30}
