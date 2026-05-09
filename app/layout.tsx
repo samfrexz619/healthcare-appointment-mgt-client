@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
+import NotificationToast from "@/components/ui/NotificationToast";
+import AuthProvider from "./providers/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,7 +22,8 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "MediApp HAMS Appointment Management System",
-  description: "MediApp HAMS is a hospital appointment management system designed to streamline scheduling, improve patient care, and enhance communication between patients, doctors, and administrators. With features like appointment booking, reminders, and secure messaging, MediApp HAMS helps hospitals run efficiently and keeps everyone connected.",
+  description:
+    "MediApp HAMS is a hospital appointment management system designed to streamline scheduling, improve patient care, and enhance communication between patients, doctors, and administrators. With features like appointment booking, reminders, and secure messaging, MediApp HAMS helps hospitals run efficiently and keeps everyone connected.",
 };
 
 export default function RootLayout({
@@ -28,14 +31,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="">
-        {children}
+        <AuthProvider>
+          {children}
+          <NotificationToast />
+        </AuthProvider>
       </body>
     </html>
   );

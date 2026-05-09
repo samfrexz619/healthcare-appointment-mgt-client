@@ -46,11 +46,7 @@ api.interceptors.response.use(
       message?: string;
     };
 
-    if (
-      status === 401 &&
-      errorData?.code === "TOKEN_EXPIRED" &&
-      !originalRequest._retry
-    ) {
+    if ((status === 401 || status === 403) && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });

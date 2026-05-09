@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react'
-import { Button } from "@/components/ui/button"
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -9,92 +9,128 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import clsx from 'clsx';
-import { RevieBookingModal } from './RevieBookingModal';
-import { DoctorInfo } from '@/types/dashboard';
-
-
-
-
+} from "@/components/ui/sheet";
+import clsx from "clsx";
+import { RevieBookingModal } from "./RevieBookingModal";
+import { DoctorInfo } from "@/types/dashboard";
+import { slotService } from "@/lib/services/slotService";
+import { appointmentService } from "@/lib/services/appointmentService";
 
 interface AppointmentDateTimeProps {
-  doctor: DoctorInfo
+  doctor: DoctorInfo;
 }
 
-
-const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({ doctor }) => {
-
+const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
+  doctor,
+}) => {
   function getNextDays(count = 7) {
-    const today = new Date()
+    const today = new Date();
 
     return Array.from({ length: count }, (_, i) => {
-      const d = new Date()
-      d.setDate(today.getDate() + i)
+      const d = new Date();
+      d.setDate(today.getDate() + i);
 
       return {
         fullDate: d,
-        day: d.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase(),
+        day: d.toLocaleDateString("en-GB", { weekday: "short" }).toUpperCase(),
         date: d.getDate(),
-        month: d.toLocaleDateString('en-GB', { month: 'short' }),
-      }
-    })
+        month: d.toLocaleDateString("en-GB", { month: "short" }),
+      };
+    });
   }
+  const [timeSlots, setTimeSlots] = useState<
+    {
+      time: string;
+      disabled: boolean;
+    }[]
+  >([]);
 
-  const timeSlots = [
-    { time: '09:00', disabled: false },
-    { time: '09:30', disabled: false },
-    { time: '10:00', disabled: false },
-    { time: '10:30', disabled: true },
-    { time: '11:00', disabled: false },
-    { time: '11:30', disabled: false },
-    { time: '14:00', disabled: false },
-    { time: '14:30', disabled: false },
-    { time: '15:00', disabled: true },
-    { time: '15:30', disabled: false },
-    { time: '16:00', disabled: false },
-  ]
+  const [slotsLoading, setSlotsLoading] = useState(false);
 
-  const dates = getNextDays(7)
+  const dates = getNextDays(7);
 
-  const [open, setOpen] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [selectedTime, setSelectedTime] = useState<string | null>(null)
-  const [visitType, setVisitType] = useState<'in-person' | 'video' | null>(null)
-  const [reason, setReason] = useState('')
-  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [open, setOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+  const [visitType, setVisitType] = useState<"in-person" | "video" | null>(
+    null,
+  );
+  const [reason, setReason] = useState("");
+  const [showReviewModal, setShowReviewModal] = useState(false);
+
+  useEffect(() => {
+    if (!doctor?._id || !selectedDate || !open) return;
+
+    const controller = new AbortController();
+
+    const loadSlots = async () => {
+      try {
+        setSlotsLoading(true);
+
+        const formattedDate = selectedDate.toISOString().split("T")[0];
+
+        const res = await slotService.getByDoctor(doctor._id, formattedDate);
+
+        const mappedSlots = res.slots.map((slot: any) => ({
+          id: slot._id,
+          time: slot.start_time,
+          disabled: slot.is_booked || slot.is_blocked,
+        }));
+
+        setTimeSlots(mappedSlots);
+      } catch (err) {
+        console.error("Failed to load slots:", err);
+      } finally {
+        setSlotsLoading(false);
+      }
+    };
+
+    loadSlots();
+
+    return () => {
+      controller.abort();
+    };
+  }, [doctor?._id, selectedDate, open]);
+
+  useEffect(() => {
+    // if (!selectedDate) {
+      setSelectedDate(dates[0].fullDate);
+    // }
+  }, [open]);
+
+  const hasAvailableSlots =
+    timeSlots.length > 0 && timeSlots.some((slot) => !slot.disabled);
 
   const isValid =
-    selectedDate &&
-    selectedTime &&
-    visitType &&
-    reason.trim().length > 0;
-
-  const handleClose = () => {
-    setOpen(false)
-    setShowReviewModal(false)
-  }
-
+    !!selectedDate && !!selectedSlot && !!visitType && reason.trim().length > 0;
 
   return (
     <>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Button className='h-12 bg-[#0F93A5] text-white rounded-[40px] px-4'>
+          <Button className="h-12 bg-[#0F93A5] text-white rounded-[40px] px-4">
             Book Appointment
           </Button>
         </SheetTrigger>
-        <SheetContent showCloseButton={true} onInteractOutside={(e) => e.preventDefault()} className='min-w-150 bg-white border-none overflow-y-scroll pt-6 pb-10'>
-          <SheetHeader className=''>
-            <SheetTitle className='text-2xl font-bold text-black'>
+        <SheetContent
+          showCloseButton={true}
+          onInteractOutside={(e) => e.preventDefault()}
+          className="min-w-150 bg-white border-none overflow-y-scroll pt-6 pb-10"
+        >
+          <SheetHeader className="">
+            <SheetTitle className="text-2xl font-bold text-black">
               Book Appointment
             </SheetTitle>
             <SheetDescription>
               Please select date and time to book appointment with your doctor.
             </SheetDescription>
           </SheetHeader>
-          <section className='px-6 space-y-4'>
-            <div style={{ borderRadius: "8px" }} className='w-full border border-gray-300 p-4'>
+          <section className="px-6 space-y-4">
+            <div
+              style={{ borderRadius: "8px" }}
+              className="w-full border border-gray-300 p-4"
+            >
               <p>Date & time</p>
               <div className="flex gap-3 overflow-x-auto py-2">
                 {dates.map((d, i) => (
@@ -103,10 +139,10 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({ doctor }) => 
                     onClick={() => setSelectedDate(d.fullDate)}
                     style={{ borderRadius: "6px" }}
                     className={clsx(
-                      'min-w-20 rounded-xl border p-2 text-center transition',
+                      "min-w-20 rounded-xl border p-2 text-center transition",
                       selectedDate?.toDateString() === d.fullDate.toDateString()
-                        ? 'border-[#0F93A5] bg-[#E6F6F8]'
-                        : 'border-gray-200'
+                        ? "border-[#0F93A5] bg-[#E6F6F8]"
+                        : "border-gray-200",
                     )}
                   >
                     <p className="text-xs text-gray-500">{d.day}</p>
@@ -116,115 +152,153 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({ doctor }) => 
                 ))}
               </div>
             </div>
-            <div style={{ borderRadius: "8px" }} className='w-full border border-gray-300 p-4'>
-              <p>Available time slots</p>
-              <div className="flex flex-wrap gap-3 py-3">
-                {timeSlots.map((slot) => (
-                  <button
-                    key={slot.time}
-                    style={{ borderRadius: "6px" }}
-                    disabled={slot.disabled}
-                    onClick={() => setSelectedTime(slot.time)}
-                    className={clsx(
-                      'px-4 py-2 rounded-xl border text-sm',
-                      slot.disabled && 'opacity-40 cursor-not-allowed',
-                      selectedTime === slot.time
-                        ? 'border-[#0F93A5] bg-[#E6F6F8]'
-                        : 'border-gray-200'
-                    )}
-                  >
-                    {slot.time}
-                  </button>
-                ))}
+
+            {slotsLoading ? (
+              <div className="py-10 text-center text-sm text-gray-500">
+                Loading slots...
               </div>
-
-            </div>
-
-            <h2 className="text-2xl font-semibold">Visit details</h2>
-            <div style={{ borderRadius: "8px" }} className='w-full border border-gray-300 p-4'>
-
-              <h3 className="mb-3 font-medium">Visit type</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => setVisitType('in-person')}
-                  style={{ borderRadius: "6px" }}
-                  className={clsx(
-                    'rounded-2xl border p-4 text-left',
-                    visitType === 'in-person'
-                      ? 'border-[#0F93A5] bg-[#E6F6F8]'
-                      : 'border-gray-200'
-                  )}
-                >
-                  <p className="font-semibold">In-person</p>
-                  <p className="text-sm text-gray-500">Visit the clinic</p>
-                </button>
-
-                <button
-                  onClick={() => setVisitType('video')}
-                  style={{ borderRadius: "6px" }}
-                  className={clsx(
-                    'rounded-2xl border p-4 text-left',
-                    visitType === 'video'
-                      ? 'border-[#0F93A5] bg-[#E6F6F8]'
-                      : 'border-gray-200'
-                  )}
-                >
-                  <p className="font-semibold">Video consultation</p>
-                  <p className="text-sm text-gray-500">From anywhere</p>
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <h3 className="mb-2 font-medium">Reason for visit</h3>
-              <textarea
-                maxLength={500}
-                value={reason}
-                style={{ borderRadius: "6px" }}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full border p-4 focus:border-[#0F93A5] outline-none"
-                placeholder="Briefly describe your symptoms..."
-              />
-              <p className="text-sm text-gray-400">{reason.length}/500</p>
-            </div>
-
-            <div>
-              <Button
-                style={{ borderRadius: "40px" }}
-                disabled={!isValid}
-                className={clsx(
-                  'w-full h-12 mt-6 text-white',
-                  isValid
-                    ? 'bg-[#0F93A5]'
-                    : 'bg-gray-300 cursor-not-allowed'
-                )}
-                onClick={() => {
-                  // console.log({
-                  //   selectedDate,
-                  //   selectedTime,
-                  //   visitType,
-                  //   reason,
-                  // })
-                  setOpen(false)
-                  setShowReviewModal(true)
-                }}
+            ) : !hasAvailableSlots ? (
+              <div
+                style={{ borderRadius: "8px" }}
+                className="w-full border border-dashed border-gray-300 rounded-xl p-4 text-center mt-4"
               >
-                Continue
-              </Button>
-            </div>
+                <p className="text-lg font-semibold text-gray-700">
+                  No available slots
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Please choose another date or try again later.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div
+                  style={{ borderRadius: "8px" }}
+                  className="w-full border border-gray-300 p-4"
+                >
+                  <p>Available time slots</p>
+                  <div className="flex flex-wrap gap-3 py-3">
+                    {timeSlots.map((slot) => (
+                      <button
+                        key={slot.time}
+                        style={{ borderRadius: "6px" }}
+                        disabled={slot.disabled}
+                        onClick={() => setSelectedSlot(slot)}
+                        className={clsx(
+                          "px-4 py-2 rounded-xl border text-sm",
+                          slot.disabled && "opacity-40 cursor-not-allowed",
+                          selectedSlot?.id === slot.id
+                            ? "border-[#0F93A5] bg-[#E6F6F8]"
+                            : "border-gray-200",
+                        )}
+                      >
+                        {slot.time}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <h2 className="text-2xl font-semibold">Visit details</h2>
+
+                <div
+                  style={{ borderRadius: "8px" }}
+                  className="w-full border border-gray-300 p-4"
+                >
+                  <h3 className="mb-3 font-medium">Visit type</h3>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() => setVisitType("in-person")}
+                      style={{ borderRadius: "6px" }}
+                      className={clsx(
+                        "rounded-2xl border p-4 text-left",
+                        visitType === "in-person"
+                          ? "border-[#0F93A5] bg-[#E6F6F8]"
+                          : "border-gray-200",
+                      )}
+                    >
+                      <p className="font-semibold">In-person</p>
+                      <p className="text-sm text-gray-500">Visit the clinic</p>
+                    </button>
+
+                    <button
+                      onClick={() => setVisitType("video")}
+                      style={{ borderRadius: "6px" }}
+                      className={clsx(
+                        "rounded-2xl border p-4 text-left",
+                        visitType === "video"
+                          ? "border-[#0F93A5] bg-[#E6F6F8]"
+                          : "border-gray-200",
+                      )}
+                    >
+                      <p className="font-semibold">Video consultation</p>
+                      <p className="text-sm text-gray-500">From anywhere</p>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <h3 className="mb-2 font-medium">Reason for visit</h3>
+
+                  <textarea
+                    maxLength={500}
+                    value={reason}
+                    style={{ borderRadius: "6px" }}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="w-full border p-4 focus:border-[#0F93A5] outline-none"
+                    placeholder="Briefly describe your symptoms..."
+                  />
+
+                  <p className="text-sm text-gray-400">{reason.length}/500</p>
+                </div>
+
+                <div>
+                  <Button
+                    style={{ borderRadius: "40px" }}
+                    className={clsx(
+                      "w-full h-12 mt-6 text-white",
+                      isValid
+                        ? "bg-[#0F93A5]"
+                        : "bg-gray-300 cursor-not-allowed",
+                    )}
+                    disabled={!isValid}
+                    onClick={() => {
+                      if (!selectedSlot || !visitType || !reason.trim()) return;
+
+                      setOpen(false);
+                      setShowReviewModal(true);
+                    }}
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </>
+            )}
           </section>
         </SheetContent>
       </Sheet>
-      {showReviewModal && <RevieBookingModal
-        doctor={doctor}
-        date={selectedDate!}
-        time={selectedTime!}
-        visitType={visitType!}
-        reason={reason}
-        onBack={handleClose}
-      />}
-    </>
-  )
-}
 
-export default AppointmentDateTime
+      {showReviewModal && selectedSlot && (
+        <RevieBookingModal
+          doctor={doctor}
+          slotId={selectedSlot.id}
+          date={selectedDate!}
+          time={selectedSlot.time}
+          visitType={visitType!}
+          reason={reason}
+          onBack={() => {
+            setShowReviewModal(false);
+            setOpen(true); // re-open the sheet so user can go back
+          }}
+          onSuccess={() => {
+            setShowReviewModal(false);
+            setSelectedSlot(null);
+            setReason("");
+            setVisitType(null);
+            setSelectedDate(null);
+          }}
+        />
+      )}
+    </>
+  );
+};
+
+export default AppointmentDateTime;

@@ -17,15 +17,23 @@ export interface ReviewMessage {
 }
 
 export interface DoctorInfo {
-  id: number;
+  _id: string;
   name: string;
-  speciality: string;
+  specialisation: string;
   numOfExperience: number;
-  consultationFee: number;
+  consultation_fee: number;
   rating: number;
   ratingCount: number;
   reviewMessages: ReviewMessage[];
   onlineAvailability: boolean;
   offlineAvailability: boolean;
   hospitalName: string;
+  education: string;
+  average_rating: number;
+  first_name: string;
+  last_name: string;
+  experience_years: number;
+  certification: string;
+  availability_types?: string[];
+  clinic_name?: string;
 }
