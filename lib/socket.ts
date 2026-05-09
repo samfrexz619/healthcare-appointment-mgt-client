@@ -5,7 +5,7 @@ let socket: Socket | null = null;
 export const initSocket = (userId: string) => {
   if (socket?.connected) return;
 
-  socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
+  socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "https://hams-backend.vercel.app", {
     withCredentials: true,
   });
 
