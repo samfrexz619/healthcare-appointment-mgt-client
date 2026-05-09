@@ -44,7 +44,6 @@ const SideNav: React.FC = () => {
   ];
 
   const pathname = usePathname();
-  // console.log(pathname);
 
   return (
     <aside className='w-61.75 h-screen p-4'>

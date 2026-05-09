@@ -11,7 +11,6 @@ interface CategoryCardProp {
 
 const CategoryCard: React.FC<CategoryCardProp> = (props) => {
   const { info, isActive, onClick } = props;
-  console.log(info);
   return (
     <div
       onClick={onClick}
