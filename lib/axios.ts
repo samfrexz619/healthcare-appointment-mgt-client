@@ -28,6 +28,11 @@ const processQueue = (error: AxiosError | null) => {
   failedQueue = [];
 };
 
+const isPublicAuthRoute = (url?: string) => {
+  if (!url) return false;
+  return url.startsWith("/auth/") && !url.startsWith("/auth/refresh");
+};
+
 api.interceptors.response.use(
   (response) => response,
 
@@ -42,7 +47,11 @@ api.interceptors.response.use(
       message?: string;
     };
 
-    if ((status === 401 || status === 403) && !originalRequest._retry) {
+    if (
+      (status === 401 || status === 403) &&
+      !originalRequest._retry &&
+      !isPublicAuthRoute(originalRequest.url)
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
