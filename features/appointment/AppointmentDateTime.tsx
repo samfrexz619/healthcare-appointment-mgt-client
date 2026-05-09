@@ -16,6 +16,25 @@ import { Doctor } from "@/types/doctor";
 import { slotService } from "@/lib/services/slotService";
 import { appointmentService } from "@/lib/services/appointmentService";
 
+interface Slot {
+  _id: string;
+  slot_date: string;
+  start_time: string;
+  end_time: string;
+  consultation_type: string;
+  location?: string;
+  fee: number;
+  is_booked: boolean;
+  is_blocked: boolean;
+}
+
+interface TimeSlotItem {
+  id: string;
+  time: string;
+  disabled: boolean;
+  slotData: Slot;
+}
+
 interface AppointmentDateTimeProps {
   doctor: Doctor;
 }
@@ -38,21 +57,15 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
       };
     });
   }
-  const [timeSlots, setTimeSlots] = useState<
-    {
-      time: string;
-      disabled: boolean;
-    }[]
-  >([]);
-
-  const [slotsLoading, setSlotsLoading] = useState(false);
 
   const dates = getNextDays(7);
 
+  const [timeSlots, setTimeSlots] = useState<TimeSlotItem[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(dates[0].fullDate);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [visitType, setVisitType] = useState<"in-person" | "video" | null>(
     null,
   );
@@ -72,10 +85,11 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
 
         const res = await slotService.getByDoctor(doctor._id, formattedDate);
 
-        const mappedSlots = res.slots.map((slot: any) => ({
+        const mappedSlots: TimeSlotItem[] = res.slots.map((slot: Slot) => ({
           id: slot._id,
           time: slot.start_time,
           disabled: slot.is_booked || slot.is_blocked,
+          slotData: slot,
         }));
 
         setTimeSlots(mappedSlots);
@@ -92,12 +106,6 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
       controller.abort();
     };
   }, [doctor?._id, selectedDate, open]);
-
-  useEffect(() => {
-    // if (!selectedDate) {
-      setSelectedDate(dates[0].fullDate);
-    // }
-  }, [open]);
 
   const hasAvailableSlots =
     timeSlots.length > 0 && timeSlots.some((slot) => !slot.disabled);
@@ -182,11 +190,14 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
                         key={slot.time}
                         style={{ borderRadius: "6px" }}
                         disabled={slot.disabled}
-                        onClick={() => setSelectedSlot(slot)}
+                        onClick={() => {
+                      setSelectedTime(slot.time);
+                      setSelectedSlot(slot.slotData);
+                    }}
                         className={clsx(
                           "px-4 py-2 rounded-xl border text-sm",
                           slot.disabled && "opacity-40 cursor-not-allowed",
-                          selectedSlot?.id === slot.id
+                          selectedSlot?._id === slot.slotData._id
                             ? "border-[#0F93A5] bg-[#E6F6F8]"
                             : "border-gray-200",
                         )}
@@ -279,9 +290,9 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
       {showReviewModal && selectedSlot && (
         <RevieBookingModal
           doctor={doctor}
-          slotId={selectedSlot.id}
+          slotId={selectedSlot._id}
           date={selectedDate!}
-          time={selectedSlot.time}
+          time={selectedTime!}
           visitType={visitType!}
           reason={reason}
           onBack={() => {
