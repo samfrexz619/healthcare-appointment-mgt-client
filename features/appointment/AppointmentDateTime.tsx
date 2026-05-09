@@ -12,12 +12,12 @@ import {
 } from "@/components/ui/sheet";
 import clsx from "clsx";
 import { RevieBookingModal } from "./RevieBookingModal";
-import { DoctorInfo } from "@/types/dashboard";
+import { Doctor } from "@/types/doctor";
 import { slotService } from "@/lib/services/slotService";
 import { appointmentService } from "@/lib/services/appointmentService";
 
 interface AppointmentDateTimeProps {
-  doctor: DoctorInfo;
+  doctor: Doctor;
 }
 
 const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({

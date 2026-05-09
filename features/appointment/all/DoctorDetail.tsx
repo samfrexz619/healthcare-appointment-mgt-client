@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 // import { Button } from '@/components/ui/button'
-import { DoctorInfo } from "@/types/dashboard";
+import { Doctor } from "@/types/doctor";
 import AppointmentDateTime from "../AppointmentDateTime";
 import { reviewService } from "@/lib/services/reviewService";
 
 interface DoctorDetailProps {
-  doctor: DoctorInfo;
+  doctor: Doctor;
 }
 
 interface Review {
@@ -23,7 +23,6 @@ interface Review {
 
 const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!doctor?._id) return;
@@ -31,8 +30,6 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
     let isMounted = true;
 
     const load = async () => {
-      setIsLoading(true);
-
       // clear previous reviews immediately
       setReviews([]);
 
@@ -46,10 +43,6 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
       } catch (err) {
         if (isMounted) {
           console.error("Failed to load reviews:", err);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
         }
       }
     };
@@ -74,7 +67,7 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
                 height={10}
                 className="w-2.5 h-2.5"
               />
-              <span className="text-[10px] font-semibold">{doctor.rating}</span>
+              <span className="text-[10px] font-semibold">{doctor.average_rating}</span>
             </div>
           </div>
 
@@ -122,7 +115,7 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
       </div>
       <section className="space-y-4">
         <p>
-          Doctor's Reviews <span>({reviews.length} Reviews)</span>
+          Doctor&apos;s Reviews <span>({reviews.length} Reviews)</span>
         </p>
         {reviews.map((review) => (
           <div

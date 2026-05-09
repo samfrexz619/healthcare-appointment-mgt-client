@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { DoctorInfo } from "@/types/dashboard";
+import { Doctor } from "@/types/doctor";
 import { appointmentService } from "@/lib/services/appointmentService";
 import { useAppContext } from "@/lib/context/AppContext";
 import { getErrorMessage } from "@/lib/getErrorMessage";
 
 interface ReviewBookingProps {
-  doctor:    DoctorInfo;
+  doctor:    Doctor;
   slotId:    string;
   date:      Date;
   time:      string;

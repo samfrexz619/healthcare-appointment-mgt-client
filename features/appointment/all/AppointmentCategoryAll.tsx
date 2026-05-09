@@ -4,21 +4,16 @@ import { useState, useEffect } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import CategoryCard from "../CategoryCard";
 import DoctorDetail from "./DoctorDetail";
-import { DoctorInfo } from "@/types/dashboard";
+import { Doctor } from "@/types/doctor";
 
 interface Props {
-  doctors: DoctorInfo[];
+  doctors: Doctor[];
   isLoading: boolean;
   activeCategory: string;
 }
 
-const AppointmentCategory = ({
-  doctors,
-  isLoading,
-  activeCategory,
-}: Props) => {
-  const [selectedDoctor, setSelectedDoctor] =
-    useState<DoctorInfo | null>(null);
+const AppointmentCategory = ({ doctors, isLoading, activeCategory }: Props) => {
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
 
   useEffect(() => {
     if (doctors.length > 0) {
@@ -30,10 +25,7 @@ const AppointmentCategory = ({
 
   if (isLoading) {
     return (
-      <TabsContent
-        value={activeCategory}
-        className="mt-6 px-2 flex gap-4"
-      >
+      <TabsContent value={activeCategory} className="mt-6 px-2 flex gap-4">
         <section className="bg-white w-105 tracking-tighter p-4 rounded-lg h-125 space-y-3">
           {[1, 2, 3, 4].map((i) => (
             <div
@@ -51,22 +43,21 @@ const AppointmentCategory = ({
   }
 
   return (
-    <TabsContent
-      value={activeCategory}
-      className="mt-6 px-2 flex gap-4"
-    >
+    <TabsContent value={activeCategory} className="mt-6 px-2 flex gap-4">
       <section className="bg-white w-105 tracking-tighter p-4 rounded-lg h-125 overflow-y-scroll space-y-3">
         <p>Choose Doctor</p>
 
         <div className="space-y-3">
-          {doctors.map((info) => (
-            <CategoryCard
-              key={info._id}
-              info={info}
-              isActive={selectedDoctor?._id === info._id}
-              onClick={() => setSelectedDoctor(info)}
-            />
-          ))}
+          {doctors.map((info) => {
+            return (
+              <CategoryCard
+                key={info._id}
+                info={info}
+                isActive={selectedDoctor?._id === info._id}
+                onClick={() => setSelectedDoctor(info)}
+              />
+            );
+          })}
         </div>
       </section>
 

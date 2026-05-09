@@ -15,6 +15,7 @@ export interface Doctor {
   first_name: string;
   last_name: string;
   email: string;
+  certification?: string;
   phone?: string;
   specialisation: string;
   license_number: string;
@@ -28,6 +29,8 @@ export interface Doctor {
   availability_types: string[];
   clinic_name?: string;
   average_rating: number;
+  rating: number;
+  consultation_fee: number;
   total_reviews: number;
   created_at: string;
 }

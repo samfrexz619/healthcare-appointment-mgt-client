@@ -2,12 +2,12 @@
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppointmentCategoryAll from "@/features/appointment/all/AppointmentCategoryAll";
-import { DoctorInfo } from "@/types/dashboard";
+import { Doctor } from "@/types/doctor";
 import { useEffect, useState } from "react";
 import { fetchDoctors } from "@/features/appointment/all/data";
 
 const AppointmentPage = () => {
-  const [doctors, setDoctors] = useState<DoctorInfo[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
 
@@ -32,8 +32,7 @@ const AppointmentPage = () => {
 
         const res = await fetchDoctors(params);
 
-        setDoctors(res.doctors);
-        console.log("Fetched doctors:", doctors);
+        setDoctors(res.doctors as Doctor[]);
       } catch (err) {
         console.error("Failed to load doctors:", err);
       } finally {

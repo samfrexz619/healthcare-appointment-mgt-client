@@ -1,16 +1,17 @@
 import Image from "next/image";
 import React from "react";
-import { DoctorInfo } from "@/types/dashboard";
+import { Doctor } from "@/types/doctor";
 import { cn } from "@/lib/utils";
 
 interface CategoryCardProp {
-  info: DoctorInfo;
+  info: Doctor;
   isActive?: boolean;
   onClick?: () => void;
 }
 
 const CategoryCard: React.FC<CategoryCardProp> = (props) => {
   const { info, isActive, onClick } = props;
+  console.log(info);
   return (
     <div
       onClick={onClick}
@@ -32,7 +33,7 @@ const CategoryCard: React.FC<CategoryCardProp> = (props) => {
               height={10}
               className="w-2.5 h-2.5"
             />
-            <span className="text-[10px] font-semibold">{info.rating}</span>
+            <span className="text-[10px] font-semibold">{info.average_rating}</span>
           </div>
         </div>
         <div className="space-y-2">
@@ -50,16 +51,18 @@ const CategoryCard: React.FC<CategoryCardProp> = (props) => {
       <div className="mt-5">
         <p>Available Today:</p>
         <ul className="space-y-3 mt-3">
-          {info.onlineAvailability && (
+          {info.availability_types?.includes("Online") && (
             <li className="py-1 px-2 bg-gray-100 rounded-md w-fit flex items-center gap-2">
               <i className="block size-1.5 rounded-full bg-gray-500"></i>
               <span className="text-xs">Online Consultation</span>
             </li>
           )}
-          <li className="py-1 px-2 bg-gray-100 rounded-md w-fit flex items-center gap-2">
-            <i className="block size-1.5 rounded-full bg-gray-500"></i>
-            <span className="text-xs">Offline at {info.clinic_name}</span>
-          </li>
+          {info.availability_types?.includes("In-Person") && (
+            <li className="py-1 px-2 bg-gray-100 rounded-md w-fit flex items-center gap-2">
+              <i className="block size-1.5 rounded-full bg-gray-500"></i>
+              <span className="text-xs">Offline at {info.clinic_name}</span>
+            </li>
+          )}
         </ul>
       </div>
       <div className="mt-5 space-y-3">
