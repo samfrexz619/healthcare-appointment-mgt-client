@@ -45,10 +45,24 @@ export interface Slot {
   is_blocked: boolean;
 }
 
+interface AppointmentPartials {
+  _id: string;
+  first_name: string;
+  last_name: string;
+  specialisation?: string;
+}
+
 export interface Appointment {
   _id: string;
-  patient_id: string;
-  doctor_id: string;
+  patient_id:
+    | string
+    | {
+        _id: string;
+        first_name: string;
+        last_name: string;
+        email?: string;
+      };
+  doctor_id: string | AppointmentPartials;
   slot_id: Slot;
   status: "confirmed" | "cancelled" | "completed" | "rescheduled";
   type: "in-person" | "video";
