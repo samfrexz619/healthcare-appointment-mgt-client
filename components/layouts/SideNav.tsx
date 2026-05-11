@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation'
-import { FileText, Home, User2, Calendar, Bell } from 'lucide-react';
+import { FileText, Home, User2, Calendar, Bell, Clock } from 'lucide-react';
 import Image from 'next/image';
 
 
@@ -23,19 +23,25 @@ const SideNav: React.FC = () => {
     },
     {
       id: 3,
+      path: '/dashboard/availability',
+      routeName: 'Availability',
+      icon: <Clock />
+    },
+    {
+      id: 4,
       path: '/dashboard/profile',
       routeName: 'Profile',
       icon: <User2 />
     },
     {
-      id: 4,
+      id: 5,
       path: '/dashboard/history',
       routeName: 'History',
       icon: <FileText />
 
     },
     {
-      id: 5,
+      id: 6,
       path: '/dashboard/notifications',
       routeName: 'Notifications',
       icon: <Bell />

@@ -3,11 +3,14 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppointmentCategoryAll from "@/features/appointment/all/AppointmentCategoryAll";
 import AppointmentsList from "@/features/appointment/AppointmentsList";
+import DoctorAppointmentsList from "@/features/appointment/DoctorAppointmentsList";
 import { Doctor } from "@/types/doctor";
+import { useAppContext } from "@/lib/context/AppContext";
 import { useEffect, useState } from "react";
 import { fetchDoctors } from "@/features/appointment/all/data";
 
 const AppointmentPage = () => {
+  const { user, isLoadingUser } = useAppContext();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -43,6 +46,14 @@ const AppointmentPage = () => {
 
     loadDoctors();
   }, [activeCategory]);
+
+  if (isLoadingUser) {
+    return <div className="p-4 text-center">Loading appointments...</div>;
+  }
+
+  if (user?.role === "doctor") {
+    return <DoctorAppointmentsList />;
+  }
 
   return (
     <section className="my-10 h-full">

@@ -28,6 +28,7 @@ const typeStyles = {
 const HeaderBox: React.FC = () => {
   const {
     user,
+    isLoadingUser,
     notifications,
     unreadCount,
     removeNotification,
@@ -59,11 +60,17 @@ const HeaderBox: React.FC = () => {
   };
 
   const initials = user
-    ? `${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase()
+    ? `${user.first_name?.[0] ?? user.email?.[0] ?? ""}${
+        user.last_name?.[0] ?? ""
+      }`.toUpperCase()
     : "??";
 
   const fullName = user
-    ? `${user.first_name ?? ""} ${user.last_name ?? ""}`
+    ? `${
+        user.first_name || user.last_name
+          ? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim()
+          : (user.email ?? user.role ?? "User")
+      }`
     : "Loading...";
 
   return (
