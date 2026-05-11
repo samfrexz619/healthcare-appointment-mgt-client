@@ -58,20 +58,22 @@ const HeaderBox: React.FC = () => {
   const handleBellClick = () => {
     setOpen((prev) => !prev);
   };
+  const firstName =
+    typeof window !== "undefined"
+      ? localStorage.getItem("user_first_name")
+      : "";
 
-  const initials = user
-    ? `${user.first_name?.[0] ?? user.email?.[0] ?? ""}${
-        user.last_name?.[0] ?? ""
-      }`.toUpperCase()
-    : "??";
+  const lastName =
+    typeof window !== "undefined" ? localStorage.getItem("user_last_name") : "";
 
-  const fullName = user
-    ? `${
-        user.first_name || user.last_name
-          ? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim()
-          : (user.email ?? user.role ?? "User")
-      }`
-    : "Loading...";
+  const role =
+    typeof window !== "undefined" ? localStorage.getItem("user_role") : "";
+
+  const initials =
+    `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
+
+  const fullName =
+    `${firstName ?? ""} ${lastName ?? ""}`.trim() || role || "User";
 
   return (
     <header className="mt-4 w-full">
