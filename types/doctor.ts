@@ -68,5 +68,8 @@ export interface Appointment {
   type: "in-person" | "video";
   notes?: string;
   cancellation_reason?: string;
+  is_reviewed?: boolean;
+  review_rating?: number;
+  review_comment?: string;
   booked_at: string;
 }

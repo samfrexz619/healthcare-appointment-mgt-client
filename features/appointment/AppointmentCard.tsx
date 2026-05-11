@@ -60,6 +60,11 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
   const doctorSpeciality = typeof appointment.doctor_id === "string"
     ? ""
     : appointment.doctor_id.specialisation || "";
+  const reviewSubmitted = appointment.is_reviewed === true;
+  const reviewRating = appointment.review_rating
+    ? Math.min(5, Math.max(0, appointment.review_rating))
+    : 5;
+  const submittedReviewComment = appointment.review_comment || "";
 
   const statusColor = {
     confirmed: "bg-blue-50 border-blue-200 text-blue-700",
@@ -385,86 +390,106 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
 
       {/* Past Appointment Review */}
       {!isUpcoming && appointment.status === "completed" && (
-        <Sheet open={showReviewModal} onOpenChange={setShowReviewModal}>
-          <SheetTrigger asChild>
-            <Button className="mt-6 w-full bg-[#0F93A5] hover:bg-[#0D7A8E] text-white rounded-lg">
-              Leave a Review
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="bg-white border-none w-full sm:max-w-md">
-            <SheetHeader>
-              <SheetTitle className="text-2xl font-bold text-black">
+        reviewSubmitted ? (
+          <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
+            <p className="font-semibold text-gray-900">Review submitted</p>
+            <div className="mt-3 flex items-center gap-1 text-yellow-400 text-xl">
+              {Array.from({ length: reviewRating }, (_, index) => (
+                <span key={index}>★</span>
+              ))}
+              {reviewRating < 5 &&
+                Array.from({ length: 5 - reviewRating }, (_, index) => (
+                  <span key={`empty-${index}`} className="text-gray-300">
+                    ★
+                  </span>
+                ))}
+            </div>
+            {submittedReviewComment && (
+              <p className="mt-3 text-sm text-gray-700">{submittedReviewComment}</p>
+            )}
+          </div>
+        ) : (
+          <Sheet open={showReviewModal} onOpenChange={setShowReviewModal}>
+            <SheetTrigger asChild>
+              <Button className="mt-6 w-full bg-[#0F93A5] hover:bg-[#0D7A8E] text-white rounded-lg">
                 Leave a Review
-              </SheetTitle>
-              <SheetDescription>
-                Share your experience with this doctor
-              </SheetDescription>
-            </SheetHeader>
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="bg-white border-none w-full sm:max-w-md">
+              <SheetHeader>
+                <SheetTitle className="text-2xl font-bold text-black">
+                  Leave a Review
+                </SheetTitle>
+                <SheetDescription>
+                  Share your experience with this doctor
+                </SheetDescription>
+              </SheetHeader>
 
-            <div className="mt-6 space-y-4">
-              {/* Star Rating */}
-              <div>
-                <label className="text-sm font-semibold text-gray-700 mb-3 block">
-                  Rating
-                </label>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => setRating(star)}
-                      className="transition transform hover:scale-110"
-                    >
-                      <Image
-                        src="/images/icons/star.png"
-                        alt="star"
-                        width={32}
-                        height={32}
-                        className={clsx(
-                          "w-8 h-8",
-                          star <= rating ? "opacity-100" : "opacity-30"
-                        )}
-                      />
-                    </button>
-                  ))}
+              <div className="mt-6 space-y-4">
+                {/* Star Rating */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mb-3 block">
+                    Rating
+                  </label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setRating(star)}
+                        className="transition transform hover:scale-110"
+                      >
+                        <Image
+                          src="/images/icons/star.png"
+                          alt="star"
+                          width={32}
+                          height={32}
+                          className={clsx(
+                            "w-8 h-8",
+                            star <= rating ? "opacity-100" : "opacity-30"
+                          )}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Review Comment */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                    Your Review (Optional)
+                  </label>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Share your experience..."
+                    className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:border-[#0F93A5]"
+                    rows={4}
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {reviewComment.length}/500
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => setShowReviewModal(false)}
+                    className="flex-1 border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 rounded-lg"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleReview}
+                    disabled={isSubmitting || rating === 0}
+                    className="flex-1 bg-[#0F93A5] hover:bg-[#0D7A8E] text-white rounded-lg disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Review"}
+                  </Button>
                 </div>
               </div>
-
-              {/* Review Comment */}
-              <div>
-                <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                  Your Review (Optional)
-                </label>
-                <textarea
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  placeholder="Share your experience..."
-                  className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:border-[#0F93A5]"
-                  rows={4}
-                  maxLength={500}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {reviewComment.length}/500
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={() => setShowReviewModal(false)}
-                  className="flex-1 border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 rounded-lg"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleReview}
-                  disabled={isSubmitting || rating === 0}
-                  className="flex-1 bg-[#0F93A5] hover:bg-[#0D7A8E] text-white rounded-lg disabled:opacity-50"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Review"}
-                </Button>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+            </SheetContent>
+          </Sheet>
+        )
       )}
     </div>
   );
