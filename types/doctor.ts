@@ -43,6 +43,9 @@ export interface Slot {
   end_time: string;
   is_booked: boolean;
   is_blocked: boolean;
+  consultation_type?: string;
+  location?: string;
+  fee?: number;
 }
 
 interface AppointmentPartials {
@@ -61,6 +64,7 @@ export interface Appointment {
         first_name: string;
         last_name: string;
         email?: string;
+        phone?: string;
       };
   doctor_id: string | AppointmentPartials;
   slot_id: Slot;

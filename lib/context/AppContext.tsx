@@ -19,6 +19,7 @@ export interface NotificationItem {
 }
 
 export interface UserProfile {
+  id: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -104,18 +105,28 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const load = async () => {
       try {
         const res = await authService.me();
+        const profile = res.profile || {};
+        const userData = res.user || {};
 
         const fullUser: UserProfile = {
-          ...res.profile,
-          role: res.user.role,
-          is_verified: res.user.is_verified,
-          email: res.user.email,
-          id: res.user.id,
+          first_name: profile.first_name || userData.first_name || "",
+          last_name: profile.last_name || userData.last_name || "",
+          email: userData.email || profile.email || "",
+          role: userData.role || profile.role || "",
+          is_verified: userData.is_verified ?? profile.is_verified ?? false,
+          id: userData.id || profile.id || "",
+          ...profile,
+          ...userData,
         };
 
         setUser(fullUser);
 
-        initSocket(res.user.id);
+        // Save to localStorage
+        localStorage.setItem("user_first_name", fullUser.first_name);
+        localStorage.setItem("user_last_name", fullUser.last_name);
+        localStorage.setItem("user_role", fullUser.role);
+
+        initSocket(userData.id || profile.id || "");
         const socket = getSocket();
 
         if (socket) {
