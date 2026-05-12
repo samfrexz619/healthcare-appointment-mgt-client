@@ -13,10 +13,6 @@ const AppointmentsList = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("upcoming");
 
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
-
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -28,6 +24,10 @@ const AppointmentsList = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
 
   const now = new Date();
 
@@ -64,7 +64,7 @@ const AppointmentsList = () => {
               "rounded-none border-b-2 px-4 py-3 font-semibold transition",
               activeTab === "upcoming"
                 ? "border-[#0F93A5] text-[#0F93A5]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                : "border-transparent text-gray-600 hover:text-gray-900",
             )}
           >
             Upcoming ({upcomingAppointments.length})
@@ -75,7 +75,7 @@ const AppointmentsList = () => {
               "rounded-none border-b-2 px-4 py-3 font-semibold transition",
               activeTab === "past"
                 ? "border-[#0F93A5] text-[#0F93A5]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                : "border-transparent text-gray-600 hover:text-gray-900",
             )}
           >
             Past ({pastAppointments.length})

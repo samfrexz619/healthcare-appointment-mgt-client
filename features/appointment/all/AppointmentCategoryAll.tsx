@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { TabsContent } from "@/components/ui/tabs";
 import CategoryCard from "../CategoryCard";
 import DoctorDetail from "./DoctorDetail";
@@ -13,15 +14,23 @@ interface Props {
 }
 
 const AppointmentCategory = ({ doctors, isLoading, activeCategory }: Props) => {
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const searchParams = useSearchParams();
+  const doctorId = searchParams?.get("doctor");
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (doctors.length > 0) {
-      setSelectedDoctor(doctors[0]);
-    } else {
-      setSelectedDoctor(null);
+  const selectedDoctor = useMemo(() => {
+    if (doctorId) {
+      const doctorFromQuery = doctors.find((doctor) => doctor._id === doctorId);
+      if (doctorFromQuery) return doctorFromQuery;
     }
-  }, [doctors]);
+
+    if (selectedDoctorId) {
+      const selected = doctors.find((doctor) => doctor._id === selectedDoctorId);
+      if (selected) return selected;
+    }
+
+    return doctors[0] ?? null;
+  }, [doctors, doctorId, selectedDoctorId]);
 
   if (isLoading) {
     return (
@@ -54,7 +63,7 @@ const AppointmentCategory = ({ doctors, isLoading, activeCategory }: Props) => {
                 key={info._id}
                 info={info}
                 isActive={selectedDoctor?._id === info._id}
-                onClick={() => setSelectedDoctor(info)}
+                onClick={() => setSelectedDoctorId(info._id)}
               />
             );
           })}
