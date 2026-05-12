@@ -47,16 +47,10 @@ const HeaderBox: React.FC = () => {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setOpen(false);
       }
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(target)
-      ) {
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setUserMenuOpen(false);
       }
     };
@@ -82,16 +76,11 @@ const HeaderBox: React.FC = () => {
       window.location.href = "/auth/login";
     }
   };
-  const firstName =
-    typeof window !== "undefined"
-      ? localStorage.getItem("user_first_name")
-      : "";
+  const firstName = user?.first_name;
 
-  const lastName =
-    typeof window !== "undefined" ? localStorage.getItem("user_last_name") : "";
+  const lastName = user?.last_name;
 
-  const role =
-    typeof window !== "undefined" ? localStorage.getItem("user_role") : "";
+  const role = user?.role;
 
   const initials =
     `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
