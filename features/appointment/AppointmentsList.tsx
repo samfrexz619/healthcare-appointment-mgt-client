@@ -5,7 +5,6 @@ import { Appointment } from "@/types/doctor";
 import { appointmentService } from "@/lib/services/appointmentService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppointmentCard from "./AppointmentCard";
-import { Button } from "@/components/ui/button";
 import clsx from "clsx";
 
 const AppointmentsList = () => {
@@ -26,7 +25,11 @@ const AppointmentsList = () => {
   };
 
   useEffect(() => {
-    fetchAppointments();
+    const loadAppointments = async () => {
+      await fetchAppointments();
+    };
+
+    loadAppointments();
   }, []);
 
   const now = new Date();

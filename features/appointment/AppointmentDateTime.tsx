@@ -14,7 +14,6 @@ import clsx from "clsx";
 import { RevieBookingModal } from "./RevieBookingModal";
 import { Doctor } from "@/types/doctor";
 import { slotService } from "@/lib/services/slotService";
-import { appointmentService } from "@/lib/services/appointmentService";
 
 interface Slot {
   _id: string;
