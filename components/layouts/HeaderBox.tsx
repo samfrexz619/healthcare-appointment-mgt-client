@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Bell, Search, X, Check } from "lucide-react";
+import { Bell, Search, X, Check, LogOut } from "lucide-react";
 import { useAppContext } from "@/lib/context/AppContext";
+import { authService } from "@/lib/services/authService";
 
 const typeStyles = {
   success: {
@@ -28,7 +29,6 @@ const typeStyles = {
 const HeaderBox: React.FC = () => {
   const {
     user,
-    isLoadingUser,
     notifications,
     unreadCount,
     removeNotification,
@@ -38,17 +38,26 @@ const HeaderBox: React.FC = () => {
   } = useAppContext();
 
   const [open, setOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
+        !dropdownRef.current.contains(target)
       ) {
         setOpen(false);
+      }
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(target)
+      ) {
+        setUserMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -56,7 +65,22 @@ const HeaderBox: React.FC = () => {
   }, []);
 
   const handleBellClick = () => {
+    setUserMenuOpen(false);
     setOpen((prev) => !prev);
+  };
+
+  const handleUserClick = () => {
+    setOpen(false);
+    setUserMenuOpen((prev) => !prev);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+      window.location.href = "/auth/login";
+    }
   };
   const firstName =
     typeof window !== "undefined"
@@ -203,8 +227,10 @@ const HeaderBox: React.FC = () => {
 
         {/* User */}
         <div
+          ref={userMenuRef}
+          onClick={handleUserClick}
           style={{ borderRadius: "8px" }}
-          className="flex gap-2 bg-white rounded-lg w-fit px-2 h-full items-center"
+          className="relative flex gap-2 bg-white rounded-lg w-fit px-2 h-full items-center cursor-pointer"
         >
           <div
             style={{ borderRadius: "6px" }}
@@ -218,6 +244,26 @@ const HeaderBox: React.FC = () => {
               {user?.role ?? ""}
             </p>
           </div>
+
+          {userMenuOpen && (
+            <div className="absolute right-0 top-14 w-64 bg-white shadow-xl border border-gray-100 rounded-xl z-50 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <div>
+                  <p className="font-semibold text-sm">Account</p>
+                  <p className="text-xs text-gray-500">{fullName}</p>
+                </div>
+              </div>
+              <div className="p-4">
+                <button
+                  onClick={handleLogout}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-semibold hover:bg-red-100 transition"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
