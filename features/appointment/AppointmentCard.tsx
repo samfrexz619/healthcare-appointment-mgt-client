@@ -54,12 +54,6 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
     day: "numeric",
   });
 
-  const doctorName = typeof appointment.doctor_id === "string"
-    ? ""
-    : `${appointment.doctor_id.first_name} ${appointment.doctor_id.last_name}`;
-  const doctorSpeciality = typeof appointment.doctor_id === "string"
-    ? ""
-    : appointment.doctor_id.specialisation || "";
   const reviewSubmitted = appointment.is_reviewed === true;
   const reviewRating = appointment.review_rating
     ? Math.min(5, Math.max(0, appointment.review_rating))
@@ -79,7 +73,10 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
       const doctorId = typeof appointment.doctor_id === "string"
         ? appointment.doctor_id
         : appointment.doctor_id._id || slot.doctor_id;
-      const res = await slotService.getByDoctor(doctorId, dateString);
+      const res = await slotService.getByDoctor(doctorId, {
+        date: dateString,
+        limit: 60,
+      });
       const rawSlots = Array.isArray(res.slots)
         ? res.slots
         : Array.isArray(res)
