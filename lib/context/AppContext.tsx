@@ -73,6 +73,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const isPublicPath = isPublicRoute(pathname);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(!isPublicPath);
+  const [hasCheckedUser, setHasCheckedUser] = useState(isPublicPath);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [toasts, setToasts] = useState<NotificationItem[]>([]);
 
@@ -120,8 +121,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
     const load = async () => {
       try {
+        setIsLoadingUser(true);
+        setHasCheckedUser(false);
         const res = await authService.me();
         const profile = res.profile || {};
         const userData = res.user || {};
@@ -136,6 +141,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           ...profile,
           ...userData,
         };
+
+        if (!isMounted) return;
 
         setUser(fullUser);
 
@@ -160,8 +167,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (err) {
         console.error("Failed to load user:", err);
+        if (isMounted) {
+          setUser(null);
+        }
       } finally {
-        setIsLoadingUser(false);
+        if (isMounted) {
+          setHasCheckedUser(true);
+          setIsLoadingUser(false);
+        }
       }
     };
 
@@ -172,6 +185,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     load();
 
     return () => {
+      isMounted = false;
       const socket = getSocket();
       if (socket) {
         socket.off("appointment:booked");
@@ -181,11 +195,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [addNotification, isPublicPath]);
 
+  const contextUser = isPublicPath ? null : user;
+  const contextIsLoadingUser = isPublicPath
+    ? false
+    : isLoadingUser || (!hasCheckedUser && !user);
+
   return (
     <AppContext.Provider
       value={{
-        user,
-        isLoadingUser,
+        user: contextUser,
+        isLoadingUser: contextIsLoadingUser,
         notifications,
         toasts,
         unreadCount,

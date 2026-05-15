@@ -7,7 +7,7 @@ import TextInput from "@/components/ui/inputs/TextInput";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { authService } from "@/lib/services/authService";
 import { AxiosError } from "axios";
 
@@ -31,6 +31,7 @@ const LoginForm = () => {
     try {
       await authService.login(data.email, data.password);
       router.push("/dashboard/home");
+      router.refresh();
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
         const message = err?.response?.data?.message;
@@ -108,7 +109,7 @@ const LoginForm = () => {
           {isLoading ? "Signing in..." : "Sign In"}
         </Button>
         <p className="text-center mt-2">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/auth/sign-up" className="text-[#0F93A5] font-semibold">
             Sign up
           </Link>
