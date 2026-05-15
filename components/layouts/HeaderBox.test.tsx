@@ -45,7 +45,7 @@ describe('HeaderBox component', () => {
     localStorage.setItem('user_role', 'nurse')
 
     useAppContextMock.mockReturnValue(
-      createContextValue({ user: { ...createContextValue().user, role: 'nurse' } }),
+      createContextValue({ user: { ...createContextValue().user, first_name: 'Jane', last_name: 'Doe', role: 'nurse' } }),
     )
 
     render(<HeaderBox />)
