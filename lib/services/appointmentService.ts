@@ -1,5 +1,11 @@
 import api from "@/lib/axios";
 
+interface GetMyAppointmentsParams {
+  page?: number;
+  limit?: number;
+  timeframe?: "upcoming" | "past";
+}
+
 export const appointmentService = {
   // slotService or appointmentService
   bookAppointment: async (data: {
@@ -15,8 +21,8 @@ export const appointmentService = {
     return res.data;
   },
 
-  getMyAppointments: async () => {
-    const res = await api.get("/appointments/me");
+  getMyAppointments: async (params?: GetMyAppointmentsParams) => {
+    const res = await api.get("/appointments/me", { params });
     return res.data;
   },
 

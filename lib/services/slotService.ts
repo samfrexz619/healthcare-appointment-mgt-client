@@ -1,5 +1,12 @@
 import api from "@/lib/axios";
 
+interface GetDoctorSlotsParams {
+  date?: string;
+  type?: "online" | "offline";
+  page?: number;
+  limit?: number;
+}
+
 export const slotService = {
   create: async (data: {
     slot_date?: string;
@@ -18,9 +25,17 @@ export const slotService = {
     return res.data;
   },
 
-  getByDoctor: async (doctorId: string, date?: string) => {
+  getByDoctor: async (
+    doctorId: string,
+    paramsOrDate?: string | GetDoctorSlotsParams,
+  ) => {
+    const params =
+      typeof paramsOrDate === "string"
+        ? { date: paramsOrDate }
+        : paramsOrDate || {};
+
     const res = await api.get(`/doctors/${doctorId}/slots`, {
-      params: date ? { date } : {},
+      params,
     });
 
     return res.data;

@@ -62,6 +62,25 @@ const getMonthlyRepeatDate = (date: Date) => {
   return nextDate;
 };
 
+const getRepeatDate = (
+  date: Date,
+  frequency: AvailableRepeatFrequency,
+  index: number,
+) => {
+  if (frequency === "weekly") {
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + index * 7);
+    return nextDate;
+  }
+
+  let nextDate = new Date(date);
+  for (let count = 0; count < index; count += 1) {
+    nextDate = getMonthlyRepeatDate(nextDate);
+  }
+
+  return nextDate;
+};
+
 const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
   doctor,
 }) => {
@@ -97,8 +116,8 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
     useState<RepeatFrequency>("none");
   const [repeatCount, setRepeatCount] = useState(4);
   const [repeatAvailability, setRepeatAvailability] = useState({
-    weekly: false,
-    monthly: false,
+    weekly: 0,
+    monthly: 0,
   });
   const [repeatAvailabilityLoading, setRepeatAvailabilityLoading] =
     useState(false);
@@ -115,7 +134,10 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
 
         const formattedDate = formatDateForApi(selectedDate);
 
-        const res = await slotService.getByDoctor(doctor._id, formattedDate);
+        const res = await slotService.getByDoctor(doctor._id, {
+          date: formattedDate,
+          limit: 60,
+        });
 
         const mappedSlots: TimeSlotItem[] = res.slots.map((slot: Slot) => ({
           id: slot._id,
@@ -149,7 +171,7 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
     const hasMatchingSlot = async (date: Date) => {
       const res = await slotService.getByDoctor(
         doctor._id,
-        formatDateForApi(date),
+        { date: formatDateForApi(date), limit: 60 },
       );
       const slots = (res.slots || []) as Slot[];
 
@@ -161,33 +183,50 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
       );
     };
 
+    const countMatchingRepeatSlots = async (
+      frequency: AvailableRepeatFrequency,
+    ) => {
+      let matchingSlotsCount = 0;
+
+      for (let index = 1; index < 60; index += 1) {
+        const date = getRepeatDate(selectedDate, frequency, index);
+        const hasSlot = await hasMatchingSlot(date);
+
+        if (!hasSlot) break;
+
+        matchingSlotsCount += 1;
+      }
+
+      return matchingSlotsCount + 1;
+    };
+
     const loadRepeatAvailability = async () => {
       try {
         setRepeatAvailabilityLoading(true);
 
-        const weeklyDate = new Date(selectedDate);
-        weeklyDate.setDate(weeklyDate.getDate() + 7);
-        const monthlyDate = getMonthlyRepeatDate(selectedDate);
-
-        const [weekly, monthly] = await Promise.all([
-          hasMatchingSlot(weeklyDate),
-          hasMatchingSlot(monthlyDate),
+        const [weeklyCount, monthlyCount] = await Promise.all([
+          countMatchingRepeatSlots("weekly"),
+          countMatchingRepeatSlots("monthly"),
         ]);
 
         if (!isMounted) return;
 
-        setRepeatAvailability({ weekly, monthly });
+        setRepeatAvailability({ weekly: weeklyCount, monthly: monthlyCount });
 
         if (
-          (repeatFrequency === "weekly" && !weekly) ||
-          (repeatFrequency === "monthly" && !monthly)
+          (repeatFrequency === "weekly" && weeklyCount < 2) ||
+          (repeatFrequency === "monthly" && monthlyCount < 2)
         ) {
           setRepeatFrequency("none");
+        } else if (repeatFrequency !== "none") {
+          const maxCount =
+            repeatFrequency === "weekly" ? weeklyCount : monthlyCount;
+          setRepeatCount((prev) => Math.min(prev, maxCount));
         }
       } catch (err) {
         console.error("Failed to check repeat availability:", err);
         if (isMounted) {
-          setRepeatAvailability({ weekly: false, monthly: false });
+          setRepeatAvailability({ weekly: 0, monthly: 0 });
           setRepeatFrequency("none");
         }
       } finally {
@@ -215,8 +254,10 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
     timeSlots.length > 0 && timeSlots.some((slot) => !slot.disabled);
   const availableRepeatFrequencies = (
     ["weekly", "monthly"] as AvailableRepeatFrequency[]
-  ).filter((frequency) => repeatAvailability[frequency]);
+  ).filter((frequency) => repeatAvailability[frequency] > 1);
   const canRepeat = availableRepeatFrequencies.length > 0;
+  const maxRepeatCount =
+    repeatFrequency === "none" ? 1 : repeatAvailability[repeatFrequency];
 
   const isValid =
     !!selectedDate && !!selectedSlot && !!visitType && reason.trim().length > 0;
@@ -257,7 +298,7 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
                       setSelectedTime(null);
                       setSelectedSlot(null);
                       setRepeatFrequency("none");
-                      setRepeatAvailability({ weekly: false, monthly: false });
+                      setRepeatAvailability({ weekly: 0, monthly: 0 });
                     }}
                     style={{ borderRadius: "6px" }}
                     className={clsx(
@@ -408,7 +449,17 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
                           <button
                             key={frequency}
                             type="button"
-                            onClick={() => setRepeatFrequency(frequency)}
+                            onClick={() => {
+                              setRepeatFrequency(frequency);
+                              if (frequency !== "none") {
+                                setRepeatCount(
+                                  Math.min(
+                                    repeatCount,
+                                    repeatAvailability[frequency],
+                                  ),
+                                );
+                              }
+                            }}
                             style={{ borderRadius: "6px" }}
                             className={clsx(
                               "border px-3 py-3 text-sm capitalize transition",
@@ -438,18 +489,22 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
                             Total appointments
                           </label>
                           <p className="text-xs text-gray-500">
-                            Includes the first appointment you selected.
+                            Includes the first appointment you selected. Up to{" "}
+                            {maxRepeatCount} available.
                           </p>
                         </div>
                         <input
                           id="repeat-count"
                           type="number"
                           min={2}
-                          max={60}
+                          max={maxRepeatCount}
                           value={repeatCount}
                           onChange={(e) =>
                             setRepeatCount(
-                              Math.min(60, Math.max(2, Number(e.target.value))),
+                              Math.min(
+                                maxRepeatCount,
+                                Math.max(2, Number(e.target.value)),
+                              ),
                             )
                           }
                           className="h-11 w-20 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:border-[#0F93A5]"

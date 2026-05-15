@@ -6,6 +6,7 @@ import { CalendarDays, Clock3, MapPin, Plus, Repeat, Trash2 } from "lucide-react
 import { useAppContext } from "@/lib/context/AppContext";
 import { slotService } from "@/lib/services/slotService";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 
 type CreationMode = "single" | "multiple" | "repeat";
 type ConsultationType = "online" | "offline";
@@ -31,6 +32,25 @@ interface CreateSlotsResponse {
   slots?: BackendSlot[];
 }
 
+interface SlotsPagination {
+  totalItems: number;
+  totalPages: number;
+  page: number;
+  limit: number;
+}
+
+interface BackendPagination {
+  totalItems?: number;
+  total?: number;
+  totalPages?: number;
+  page?: number;
+  currentPage?: number;
+  limit?: number;
+  pageSize?: number;
+}
+
+const SLOTS_PAGE_SIZE = 10;
+
 const mapSlots = (rawSlots: BackendSlot[] = []) =>
   rawSlots.map((slot) => ({
     id: slot._id,
@@ -38,6 +58,25 @@ const mapSlots = (rawSlots: BackendSlot[] = []) =>
     start_time: slot.start_time,
     end_time: slot.end_time,
   }));
+
+const normalizePagination = (
+  pagination: BackendPagination | undefined,
+): SlotsPagination | null => {
+  if (!pagination) return null;
+
+  const totalItems = pagination.totalItems ?? pagination.total ?? 0;
+  const limit = pagination.limit ?? pagination.pageSize ?? SLOTS_PAGE_SIZE;
+  const page = pagination.page ?? pagination.currentPage ?? 1;
+  const totalPages =
+    pagination.totalPages ?? Math.max(1, Math.ceil(totalItems / limit));
+
+  return {
+    totalItems,
+    totalPages,
+    page,
+    limit,
+  };
+};
 
 const AvailabilityPage: React.FC = () => {
   const { user, isLoadingUser, addNotification } = useAppContext();
@@ -50,6 +89,9 @@ const AvailabilityPage: React.FC = () => {
     show: boolean;
     slotId: string | null;
   }>({ show: false, slotId: null });
+  const [slotsPage, setSlotsPage] = useState(1);
+  const [slotsPagination, setSlotsPagination] =
+    useState<SlotsPagination | null>(null);
 
   const [creationMode, setCreationMode] = useState<CreationMode>("single");
   const [slotDate, setSlotDate] = useState("");
@@ -85,8 +127,12 @@ const AvailabilityPage: React.FC = () => {
       }
 
       try {
-        const data = await slotService.getByDoctor(doctorProfileId);
+        const data = await slotService.getByDoctor(doctorProfileId, {
+          page: slotsPage,
+          limit: SLOTS_PAGE_SIZE,
+        });
         setSlots(mapSlots(data.slots || []));
+        setSlotsPagination(normalizePagination(data.pagination));
       } catch (error) {
         console.error("Failed to fetch slots:", error);
         addNotification({
@@ -99,7 +145,7 @@ const AvailabilityPage: React.FC = () => {
     };
 
     void fetchSlots();
-  }, [isDoctor, isLoadingUser, doctorProfileId, addNotification]);
+  }, [isDoctor, isLoadingUser, doctorProfileId, slotsPage, addNotification]);
 
   const clearForm = () => {
     setSlotDate("");
@@ -188,8 +234,13 @@ const AvailabilityPage: React.FC = () => {
       clearForm();
 
       if (doctorProfileId) {
-        const data = await slotService.getByDoctor(doctorProfileId);
+        const data = await slotService.getByDoctor(doctorProfileId, {
+          page: 1,
+          limit: SLOTS_PAGE_SIZE,
+        });
         setSlots(mapSlots(data.slots || []));
+        setSlotsPagination(normalizePagination(data.pagination));
+        setSlotsPage(1);
       }
     } catch (error) {
       console.error("Failed to create slots:", error);
@@ -209,7 +260,28 @@ const AvailabilityPage: React.FC = () => {
     try {
       await slotService.delete(deleteConfirm.slotId);
       addNotification({ message: "Slot deleted successfully", type: "success" });
-      setSlots((prev) => prev.filter((slot) => slot.id !== deleteConfirm.slotId));
+      if (doctorProfileId) {
+        const data = await slotService.getByDoctor(doctorProfileId, {
+          page: slotsPage,
+          limit: SLOTS_PAGE_SIZE,
+        });
+        const nextSlots = mapSlots(data.slots || []);
+        const nextPagination = normalizePagination(data.pagination);
+
+        if (nextSlots.length === 0 && slotsPage > 1) {
+          const previousPage = slotsPage - 1;
+          const previousData = await slotService.getByDoctor(doctorProfileId, {
+            page: previousPage,
+            limit: SLOTS_PAGE_SIZE,
+          });
+          setSlots(mapSlots(previousData.slots || []));
+          setSlotsPagination(normalizePagination(previousData.pagination));
+          setSlotsPage(previousPage);
+        } else {
+          setSlots(nextSlots);
+          setSlotsPagination(nextPagination);
+        }
+      }
     } catch (error) {
       console.error("Failed to delete slot:", error);
       addNotification({ message: "Failed to delete slot", type: "error" });
@@ -487,6 +559,18 @@ const AvailabilityPage: React.FC = () => {
                 </Button>
               </div>
             ))}
+            {slotsPagination && (
+              <Pagination
+                currentPage={slotsPagination.page}
+                totalPages={slotsPagination.totalPages}
+                totalItems={slotsPagination.totalItems}
+                pageSize={slotsPagination.limit}
+                onPageChange={setSlotsPage}
+                isLoading={loading}
+                itemLabel="slots"
+                className="mt-5"
+              />
+            )}
           </div>
         )}
       </div>
