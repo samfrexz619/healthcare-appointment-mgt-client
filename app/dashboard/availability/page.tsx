@@ -1,10 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CalendarDays, Clock3, MapPin, Plus, Repeat, Trash2 } from "lucide-react";
 import { useAppContext } from "@/lib/context/AppContext";
 import { slotService } from "@/lib/services/slotService";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus } from "lucide-react";
+
+type CreationMode = "single" | "multiple" | "repeat";
+type ConsultationType = "online" | "offline";
+type DoctorRepeatFrequency = "daily" | "weekly" | "monthly";
 
 interface Slot {
   id: string;
@@ -20,99 +25,175 @@ interface BackendSlot {
   end_time: string;
 }
 
+interface CreateSlotsResponse {
+  created_count?: number;
+  skipped_count?: number;
+  slots?: BackendSlot[];
+}
+
+const mapSlots = (rawSlots: BackendSlot[] = []) =>
+  rawSlots.map((slot) => ({
+    id: slot._id,
+    slot_date: slot.slot_date,
+    start_time: slot.start_time,
+    end_time: slot.end_time,
+  }));
+
 const AvailabilityPage: React.FC = () => {
-  const { user, addNotification } = useAppContext();
+  const { user, isLoadingUser, addNotification } = useAppContext();
+  const router = useRouter();
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; slotId: string | null }>({ show: false, slotId: null });
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    show: boolean;
+    slotId: string | null;
+  }>({ show: false, slotId: null });
 
-  // Form state
+  const [creationMode, setCreationMode] = useState<CreationMode>("single");
   const [slotDate, setSlotDate] = useState("");
+  const [dateToAdd, setDateToAdd] = useState("");
+  const [slotDates, setSlotDates] = useState<string[]>([]);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [consultationType, setConsultationType] =
+    useState<ConsultationType>("online");
+  const [location, setLocation] = useState("");
+  const [fee, setFee] = useState("0");
+  const [repeatFrequency, setRepeatFrequency] =
+    useState<DoctorRepeatFrequency>("weekly");
+  const [repeatCount, setRepeatCount] = useState(6);
+
+  const isDoctor = user?.role === "doctor";
+  const doctorProfileId =
+    typeof user?._id === "string" ? user._id : user?.id || "";
 
   useEffect(() => {
+    if (!isLoadingUser && !isDoctor) {
+      router.replace("/dashboard/home");
+    }
+  }, [isLoadingUser, isDoctor, router]);
+
+  useEffect(() => {
+    if (isLoadingUser) return;
+
     const fetchSlots = async () => {
-      if (!user?.id) return;
+      if (!isDoctor || !doctorProfileId) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const data = await slotService.getByDoctor(user.id);
-        const mappedSlots = (data.slots || []).map((slot: BackendSlot) => ({
-          id: slot._id,
-          slot_date: slot.slot_date,
-          start_time: slot.start_time,
-          end_time: slot.end_time,
-        }));
-        setSlots(mappedSlots);
+        const data = await slotService.getByDoctor(doctorProfileId);
+        setSlots(mapSlots(data.slots || []));
       } catch (error) {
         console.error("Failed to fetch slots:", error);
-        addNotification({ message: "Failed to load availability slots", type: "error" });
+        addNotification({
+          message: "Failed to load availability slots",
+          type: "error",
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    if (user?.id) {
-      void fetchSlots();
-    }
-  }, [user?.id, addNotification]);
+    void fetchSlots();
+  }, [isDoctor, isLoadingUser, doctorProfileId, addNotification]);
 
-  const getEndTimeFromStart = (time: string) => {
-    if (!time) return "";
-    const [hours, minutes] = time.split(":").map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes + 30, 0, 0);
-    const hh = String(date.getHours()).padStart(2, "0");
-    const mm = String(date.getMinutes()).padStart(2, "0");
-    return `${hh}:${mm}`;
+  const clearForm = () => {
+    setSlotDate("");
+    setDateToAdd("");
+    setSlotDates([]);
+    setStartTime("");
+    setEndTime("");
+    setConsultationType("online");
+    setLocation("");
+    setFee("0");
+    setRepeatFrequency("weekly");
+    setRepeatCount(6);
   };
 
-  const handleStartTimeChange = (value: string) => {
-    setStartTime(value);
-    setEndTime(getEndTimeFromStart(value));
-    if (formError) {
-      setFormError(null);
+  const addExplicitDate = () => {
+    if (!dateToAdd || slotDates.includes(dateToAdd)) return;
+    setSlotDates((prev) => [...prev, dateToAdd].sort());
+    setDateToAdd("");
+    setFormError(null);
+  };
+
+  const validateForm = () => {
+    if (!startTime || !endTime) {
+      return "Please enter a start and end time.";
     }
+
+    if (endTime <= startTime) {
+      return "End time must be after start time.";
+    }
+
+    if (creationMode === "multiple" && slotDates.length === 0) {
+      return "Please add at least one date.";
+    }
+
+    if (creationMode !== "multiple" && !slotDate) {
+      return "Please select a date.";
+    }
+
+    if (consultationType === "offline" && !location.trim()) {
+      return "Please enter a clinic location for offline slots.";
+    }
+
+    if (Number.isNaN(Number(fee)) || Number(fee) < 0) {
+      return "Please enter a valid fee.";
+    }
+
+    return null;
   };
 
   const handleCreateSlot = async () => {
-    if (!slotDate || !startTime) {
-      setFormError("Please fill in all fields.");
-      return;
-    }
-
-    const expectedEndTime = getEndTimeFromStart(startTime);
-    if (endTime !== expectedEndTime) {
-      setFormError("Time slots must be exactly 30 minutes.");
+    const validationError = validateForm();
+    if (validationError) {
+      setFormError(validationError);
       return;
     }
 
     setFormError(null);
     setCreating(true);
+
     try {
-      await slotService.create({
-        slot_date: slotDate,
+      const response = (await slotService.create({
+        ...(creationMode === "multiple"
+          ? { slot_dates: slotDates }
+          : { slot_date: slotDate }),
         start_time: startTime,
         end_time: endTime,
+        consultation_type: consultationType,
+        location: consultationType === "offline" ? location.trim() : undefined,
+        fee: Number(fee),
+        repeat:
+          creationMode === "repeat"
+            ? { frequency: repeatFrequency, count: repeatCount }
+            : { frequency: "none", count: 1 },
+      })) as CreateSlotsResponse;
+
+      const createdCount = response.created_count ?? response.slots?.length ?? 0;
+      const skippedCount = response.skipped_count ?? 0;
+
+      addNotification({
+        message: `${createdCount} slot${
+          createdCount === 1 ? "" : "s"
+        } created, ${skippedCount} skipped.`,
+        type: skippedCount > 0 ? "info" : "success",
       });
-      addNotification({ message: "Availability slot created successfully", type: "success" });
-      setSlotDate("");
-      setStartTime("");
-      setEndTime("");
-      if (user?.id) {
-        const data = await slotService.getByDoctor(user.id);
-        const mappedSlots = (data.slots || []).map((slot: BackendSlot) => ({
-          id: slot._id,
-          slot_date: slot.slot_date,
-          start_time: slot.start_time,
-          end_time: slot.end_time,
-        }));
-        setSlots(mappedSlots);
+
+      clearForm();
+
+      if (doctorProfileId) {
+        const data = await slotService.getByDoctor(doctorProfileId);
+        setSlots(mapSlots(data.slots || []));
       }
     } catch (error) {
-      console.error("Failed to create slot:", error);
-      setFormError("Failed to create availability slot. Please try again.");
+      console.error("Failed to create slots:", error);
+      setFormError("Failed to create availability slots. Please try again.");
     } finally {
       setCreating(false);
     }
@@ -141,7 +222,7 @@ const AvailabilityPage: React.FC = () => {
     setDeleteConfirm({ show: false, slotId: null });
   };
 
-  if (loading) {
+  if (isLoadingUser || loading || !isDoctor) {
     return (
       <div className="p-6">
         <div className="text-center">Loading availability...</div>
@@ -151,23 +232,89 @@ const AvailabilityPage: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div>
         <h1 className="text-2xl font-bold">Manage Availability</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Create single, multiple-date, or repeating slots for patients to book.
+        </p>
       </div>
 
-      {/* Create Slot Form */}
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <Plus className="w-5 h-5" />
-          Add Availability Slot
+          Add Availability
         </h2>
+
         {formError && (
           <div className="w-full bg-red-50 border border-red-300 text-red-600 text-sm rounded-lg px-4 py-3 mb-4">
             {formError}
           </div>
         )}
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {(["single", "multiple", "repeat"] as CreationMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => {
+                  setCreationMode(mode);
+                  setFormError(null);
+                }}
+                className={`border rounded-lg px-4 py-3 text-sm font-semibold transition ${
+                  creationMode === mode
+                    ? "border-[#0F93A5] bg-[#E6F6F8] text-[#0F93A5]"
+                    : "border-gray-200 text-gray-600"
+                }`}
+              >
+                {mode === "single"
+                  ? "Single slot"
+                  : mode === "multiple"
+                  ? "Multiple dates"
+                  : "Repeating slots"}
+              </button>
+            ))}
+          </div>
+
+          {creationMode === "multiple" ? (
+            <div>
+              <label htmlFor="date-to-add" className="block text-sm font-medium text-gray-700 mb-1">
+                Dates
+              </label>
+              <div className="flex gap-3">
+                <input
+                  id="date-to-add"
+                  type="date"
+                  value={dateToAdd}
+                  onChange={(e) => setDateToAdd(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button
+                  onClick={addExplicitDate}
+                  className="bg-[#0F93A5] text-white hover:bg-[#0D7A8E] rounded-lg"
+                >
+                  Add Date
+                </Button>
+              </div>
+              {slotDates.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {slotDates.map((date) => (
+                    <button
+                      key={date}
+                      type="button"
+                      onClick={() =>
+                        setSlotDates((prev) => prev.filter((item) => item !== date))
+                      }
+                      className="rounded-4xl border border-[#C4E8D5] bg-[#E6F9F0] text-[#166B43] px-3 py-1 text-xs font-semibold"
+                    >
+                      {date} x
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
             <div>
               <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Date</label>
               <input
@@ -175,19 +322,21 @@ const AvailabilityPage: React.FC = () => {
                 type="date"
                 value={slotDate}
                 onChange={(e) => setSlotDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
+                min={new Date().toISOString().split("T")[0]}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="start" className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
               <input
                 id="start"
                 type="time"
                 step={1800}
-                max="23:30"
                 value={startTime}
-                onChange={(e) => handleStartTimeChange(e.target.value)}
+                onChange={(e) => setStartTime(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -198,42 +347,136 @@ const AvailabilityPage: React.FC = () => {
                 type="time"
                 step={1800}
                 value={endTime}
-                readOnly
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label htmlFor="consultation-type" className="block text-sm font-medium text-gray-700 mb-1">
+                Consultation Type
+              </label>
+              <select
+                id="consultation-type"
+                value={consultationType}
+                onChange={(e) =>
+                  setConsultationType(e.target.value as ConsultationType)
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="online">Online</option>
+                <option value="offline">Offline</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="fee" className="block text-sm font-medium text-gray-700 mb-1">Fee</label>
+              <input
+                id="fee"
+                type="number"
+                min={0}
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <input
+                id="location"
+                type="text"
+                value={location}
+                disabled={consultationType === "online"}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder={consultationType === "online" ? "Not required" : "Main Clinic"}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {creationMode === "repeat" && (
+            <div className="border border-[#C4E8D5] bg-[#E6F9F0] rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3 text-[#166B43]">
+                <Repeat className="w-5 h-5" />
+                <p className="text-sm font-semibold">Repeat Rule</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="repeat-frequency" className="block text-sm font-medium text-gray-700 mb-1">
+                    Frequency
+                  </label>
+                  <select
+                    id="repeat-frequency"
+                    value={repeatFrequency}
+                    onChange={(e) =>
+                      setRepeatFrequency(e.target.value as DoctorRepeatFrequency)
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="repeat-count" className="block text-sm font-medium text-gray-700 mb-1">
+                    Count
+                  </label>
+                  <input
+                    id="repeat-count"
+                    type="number"
+                    min={2}
+                    max={60}
+                    value={repeatCount}
+                    onChange={(e) =>
+                      setRepeatCount(
+                        Math.min(60, Math.max(2, Number(e.target.value))),
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <Button
             onClick={handleCreateSlot}
             disabled={creating}
             className="w-full md:w-auto bg-[#0F93A5] text-white hover:bg-[#0D7A8E] rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {creating ? "Creating..." : "Create Slot"}
+            {creating ? "Creating..." : "Create Availability"}
           </Button>
         </div>
       </div>
 
-      {/* Existing Slots */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Your Availability Slots</h2>
+        <h2 className="text-xl font-semibold mb-4">Your Available Slots</h2>
         {slots.length === 0 ? (
           <p className="text-gray-500 text-center py-4">
-            No availability slots created yet.
+            No available slots created yet.
           </p>
         ) : (
           <div className="space-y-3">
-            {slots.map((slot, index) => (
+            {slots.map((slot) => (
               <div
-                key={index}
+                key={slot.id}
                 className="flex items-center justify-between p-4 border rounded-lg"
               >
-                <div>
-                  <p className="font-medium">
-                    {new Date(slot.slot_date).toLocaleDateString()}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {slot.start_time} - {slot.end_time}
-                  </p>
+                <div className="flex gap-3">
+                  <div className="size-10 rounded-lg bg-[#E5F8FA] text-[#0F93A5] grid place-items-center">
+                    <CalendarDays className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      {new Date(slot.slot_date).toLocaleDateString()}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock3 className="w-4 h-4" />
+                      <span>{slot.start_time} - {slot.end_time}</span>
+                    </div>
+                  </div>
                 </div>
                 <Button
                   variant="destructive"
@@ -248,11 +491,13 @@ const AvailabilityPage: React.FC = () => {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
       {deleteConfirm.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin className="w-5 h-5 text-red-600" />
+              <h3 className="text-lg font-semibold">Confirm Deletion</h3>
+            </div>
             <p className="text-gray-600 mb-6">
               Are you sure you want to delete this availability slot? This action cannot be undone.
             </p>

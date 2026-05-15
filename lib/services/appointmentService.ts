@@ -6,6 +6,10 @@ export const appointmentService = {
     slot_id: string;
     type: string;
     notes: string;
+    repeat?: {
+      frequency: "none" | "weekly" | "monthly";
+      count: number;
+    };
   }) => {
     const res = await api.post("/appointments", data);
     return res.data;

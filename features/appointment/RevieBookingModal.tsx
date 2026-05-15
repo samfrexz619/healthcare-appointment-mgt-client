@@ -5,6 +5,15 @@ import { Doctor } from "@/types/doctor";
 import { appointmentService } from "@/lib/services/appointmentService";
 import { useAppContext } from "@/lib/context/AppContext";
 import { getErrorMessage } from "@/lib/getErrorMessage";
+import type { RepeatBookingConfig } from "./AppointmentDateTime";
+
+interface BookingResponse {
+  booking_status?: "confirmed" | "partially_confirmed";
+  requested_count?: number;
+  confirmed_count?: number;
+  unavailable_count?: number;
+  unavailable_dates?: string[];
+}
 
 interface ReviewBookingProps {
   doctor:    Doctor;
@@ -13,12 +22,23 @@ interface ReviewBookingProps {
   time:      string;
   visitType: "in-person" | "video";
   reason:    string;
+  repeat:    RepeatBookingConfig;
   onBack:    () => void;
   onSuccess: () => void;
 }
 
 export const RevieBookingModal: React.FC<ReviewBookingProps> = (props) => {
-  const { doctor, slotId, date, time, visitType, reason, onBack, onSuccess } = props;
+  const {
+    doctor,
+    slotId,
+    date,
+    time,
+    visitType,
+    reason,
+    repeat,
+    onBack,
+    onSuccess,
+  } = props;
 
   const { addNotification } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
@@ -32,20 +52,37 @@ export const RevieBookingModal: React.FC<ReviewBookingProps> = (props) => {
 
   const initials = `${doctor.first_name?.[0] ?? ""}${doctor.last_name?.[0] ?? ""}`.toUpperCase();
 
+  const repeatLabel =
+    repeat.frequency === "none"
+      ? "Does not repeat"
+      : `${repeat.frequency === "weekly" ? "Weekly" : "Monthly"} for ${
+          repeat.count
+        } appointments`;
+
   const handleConfirm = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      await appointmentService.bookAppointment({
+      const response = (await appointmentService.bookAppointment({
         slot_id: slotId,
         type:    visitType,
         notes:   reason,
-      });
+        repeat,
+      })) as BookingResponse;
+
+      const requestedCount = response.requested_count ?? repeat.count;
+      const confirmedCount = response.confirmed_count ?? 1;
+      const unavailableCount = response.unavailable_count ?? 0;
 
       addNotification({
-        message: `Appointment with Dr. ${doctor.first_name} ${doctor.last_name} confirmed!`,
-        type:    "success",
+        message:
+          requestedCount === 1
+            ? `Appointment with Dr. ${doctor.first_name} ${doctor.last_name} confirmed!`
+            : `${confirmedCount}/${requestedCount} appointments with Dr. ${doctor.first_name} ${doctor.last_name} confirmed${
+                unavailableCount > 0 ? `, ${unavailableCount} unavailable` : ""
+              }.`,
+        type: unavailableCount > 0 ? "info" : "success",
       });
 
       onSuccess();
@@ -90,6 +127,7 @@ export const RevieBookingModal: React.FC<ReviewBookingProps> = (props) => {
             <Row label="Date"   value={formattedDate} />
             <Row label="Time"   value={time} />
             <Row label="Type"   value={visitType === "in-person" ? "In-person visit" : "Video consultation"} />
+            <Row label="Repeat" value={repeatLabel} />
             {reason && <Row label="Reason" value={reason} />}
           </div>
         </div>

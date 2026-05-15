@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { CalendarClock, Repeat } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -38,6 +39,29 @@ interface AppointmentDateTimeProps {
   doctor: Doctor;
 }
 
+export type RepeatFrequency = "none" | "weekly" | "monthly";
+type AvailableRepeatFrequency = Exclude<RepeatFrequency, "none">;
+
+export interface RepeatBookingConfig {
+  frequency: RepeatFrequency;
+  count: number;
+}
+
+const formatDateForApi = (date: Date) => date.toISOString().split("T")[0];
+
+const getMonthlyRepeatDate = (date: Date) => {
+  const nextDate = new Date(date);
+  const targetDay = nextDate.getDate();
+
+  nextDate.setMonth(nextDate.getMonth() + 1);
+
+  if (nextDate.getDate() !== targetDay) {
+    nextDate.setDate(0);
+  }
+
+  return nextDate;
+};
+
 const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
   doctor,
 }) => {
@@ -69,6 +93,15 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
     null,
   );
   const [reason, setReason] = useState("");
+  const [repeatFrequency, setRepeatFrequency] =
+    useState<RepeatFrequency>("none");
+  const [repeatCount, setRepeatCount] = useState(4);
+  const [repeatAvailability, setRepeatAvailability] = useState({
+    weekly: false,
+    monthly: false,
+  });
+  const [repeatAvailabilityLoading, setRepeatAvailabilityLoading] =
+    useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
 
   useEffect(() => {
@@ -80,7 +113,7 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
       try {
         setSlotsLoading(true);
 
-        const formattedDate = selectedDate.toISOString().split("T")[0];
+        const formattedDate = formatDateForApi(selectedDate);
 
         const res = await slotService.getByDoctor(doctor._id, formattedDate);
 
@@ -106,8 +139,84 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
     };
   }, [doctor?._id, selectedDate, open]);
 
+  useEffect(() => {
+    if (!doctor?._id || !selectedDate || !selectedSlot || !selectedTime || !open) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const hasMatchingSlot = async (date: Date) => {
+      const res = await slotService.getByDoctor(
+        doctor._id,
+        formatDateForApi(date),
+      );
+      const slots = (res.slots || []) as Slot[];
+
+      return slots.some(
+        (slot) =>
+          slot.start_time === selectedTime &&
+          !slot.is_booked &&
+          !slot.is_blocked,
+      );
+    };
+
+    const loadRepeatAvailability = async () => {
+      try {
+        setRepeatAvailabilityLoading(true);
+
+        const weeklyDate = new Date(selectedDate);
+        weeklyDate.setDate(weeklyDate.getDate() + 7);
+        const monthlyDate = getMonthlyRepeatDate(selectedDate);
+
+        const [weekly, monthly] = await Promise.all([
+          hasMatchingSlot(weeklyDate),
+          hasMatchingSlot(monthlyDate),
+        ]);
+
+        if (!isMounted) return;
+
+        setRepeatAvailability({ weekly, monthly });
+
+        if (
+          (repeatFrequency === "weekly" && !weekly) ||
+          (repeatFrequency === "monthly" && !monthly)
+        ) {
+          setRepeatFrequency("none");
+        }
+      } catch (err) {
+        console.error("Failed to check repeat availability:", err);
+        if (isMounted) {
+          setRepeatAvailability({ weekly: false, monthly: false });
+          setRepeatFrequency("none");
+        }
+      } finally {
+        if (isMounted) {
+          setRepeatAvailabilityLoading(false);
+        }
+      }
+    };
+
+    void loadRepeatAvailability();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    doctor?._id,
+    selectedDate,
+    selectedSlot,
+    selectedTime,
+    open,
+    repeatFrequency,
+  ]);
+
   const hasAvailableSlots =
     timeSlots.length > 0 && timeSlots.some((slot) => !slot.disabled);
+  const availableRepeatFrequencies = (
+    ["weekly", "monthly"] as AvailableRepeatFrequency[]
+  ).filter((frequency) => repeatAvailability[frequency]);
+  const canRepeat = availableRepeatFrequencies.length > 0;
 
   const isValid =
     !!selectedDate && !!selectedSlot && !!visitType && reason.trim().length > 0;
@@ -143,7 +252,13 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
                 {dates.map((d, i) => (
                   <button
                     key={i}
-                    onClick={() => setSelectedDate(d.fullDate)}
+                    onClick={() => {
+                      setSelectedDate(d.fullDate);
+                      setSelectedTime(null);
+                      setSelectedSlot(null);
+                      setRepeatFrequency("none");
+                      setRepeatAvailability({ weekly: false, monthly: false });
+                    }}
                     style={{ borderRadius: "6px" }}
                     className={clsx(
                       "min-w-20 rounded-xl border p-2 text-center transition",
@@ -190,9 +305,10 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
                         style={{ borderRadius: "6px" }}
                         disabled={slot.disabled}
                         onClick={() => {
-                      setSelectedTime(slot.time);
-                      setSelectedSlot(slot.slotData);
-                    }}
+                          setSelectedTime(slot.time);
+                          setSelectedSlot(slot.slotData);
+                          setRepeatFrequency("none");
+                        }}
                         className={clsx(
                           "px-4 py-2 rounded-xl border text-sm",
                           slot.disabled && "opacity-40 cursor-not-allowed",
@@ -260,6 +376,89 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
                   <p className="text-sm text-gray-400">{reason.length}/500</p>
                 </div>
 
+                {selectedSlot && repeatAvailabilityLoading && (
+                  <div
+                    style={{ borderRadius: "8px" }}
+                    className="w-full border border-gray-200 p-4 text-sm text-gray-500"
+                  >
+                    Checking repeat availability...
+                  </div>
+                )}
+
+                {selectedSlot && !repeatAvailabilityLoading && canRepeat && (
+                  <div
+                    style={{ borderRadius: "8px" }}
+                    className="w-full border border-gray-300 p-4"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <Repeat size={18} className="text-[#0F93A5]" />
+                      <h3 className="font-medium">Repeat appointment</h3>
+                    </div>
+
+                    <div
+                      className={clsx(
+                        "grid gap-3",
+                        availableRepeatFrequencies.length === 1
+                          ? "grid-cols-2"
+                          : "grid-cols-3",
+                      )}
+                    >
+                      {(["none", ...availableRepeatFrequencies] as RepeatFrequency[]).map(
+                        (frequency) => (
+                          <button
+                            key={frequency}
+                            type="button"
+                            onClick={() => setRepeatFrequency(frequency)}
+                            style={{ borderRadius: "6px" }}
+                            className={clsx(
+                              "border px-3 py-3 text-sm capitalize transition",
+                              repeatFrequency === frequency
+                                ? "border-[#0F93A5] bg-[#E6F6F8] text-[#0F93A5]"
+                                : "border-gray-200 text-gray-600",
+                            )}
+                          >
+                            {frequency === "none"
+                              ? "Does not repeat"
+                              : frequency}
+                          </button>
+                        ),
+                      )}
+                    </div>
+
+                    {repeatFrequency !== "none" && (
+                      <div className="mt-4 flex items-center gap-3">
+                        <div className="size-10 rounded-lg bg-[#E5F8FA] text-[#0F93A5] grid place-items-center shrink-0">
+                          <CalendarClock size={18} />
+                        </div>
+                        <div className="flex-1">
+                          <label
+                            htmlFor="repeat-count"
+                            className="block text-sm font-medium text-gray-700"
+                          >
+                            Total appointments
+                          </label>
+                          <p className="text-xs text-gray-500">
+                            Includes the first appointment you selected.
+                          </p>
+                        </div>
+                        <input
+                          id="repeat-count"
+                          type="number"
+                          min={2}
+                          max={60}
+                          value={repeatCount}
+                          onChange={(e) =>
+                            setRepeatCount(
+                              Math.min(60, Math.max(2, Number(e.target.value))),
+                            )
+                          }
+                          className="h-11 w-20 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:border-[#0F93A5]"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div>
                   <Button
                     style={{ borderRadius: "40px" }}
@@ -294,6 +493,10 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
           time={selectedTime!}
           visitType={visitType!}
           reason={reason}
+          repeat={{
+            frequency: repeatFrequency,
+            count: repeatFrequency === "none" ? 1 : repeatCount,
+          }}
           onBack={() => {
             setShowReviewModal(false);
             setOpen(true); // re-open the sheet so user can go back
@@ -303,6 +506,8 @@ const AppointmentDateTime: React.FC<AppointmentDateTimeProps> = ({
             setSelectedSlot(null);
             setReason("");
             setVisitType(null);
+            setRepeatFrequency("none");
+            setRepeatCount(4);
             setSelectedDate(null);
           }}
         />
