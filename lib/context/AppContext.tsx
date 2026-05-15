@@ -63,12 +63,16 @@ const PUBLIC_AUTH_ROUTES = [
 ];
 
 const isPublicRoute = (pathname: string) =>
-  PUBLIC_AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(route));
+  PUBLIC_AUTH_ROUTES.some((route) => {
+    if (route === "/") return pathname === "/";
+    return pathname === route || pathname.startsWith(`${route}/`);
+  });
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
+  const isPublicPath = isPublicRoute(pathname);
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isLoadingUser, setIsLoadingUser] = useState(!isPublicPath);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [toasts, setToasts] = useState<NotificationItem[]>([]);
 
@@ -161,8 +165,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    if (isPublicRoute(pathname)) {
-      setIsLoadingUser(false);
+    if (isPublicPath) {
       return;
     }
 
@@ -176,7 +179,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         socket.off("appointment:rescheduled");
       }
     };
-  }, [addNotification, pathname]);
+  }, [addNotification, isPublicPath]);
 
   return (
     <AppContext.Provider
