@@ -102,7 +102,6 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
         (s) => !s.is_booked && !s.is_blocked && s._id !== currentSlotId,
       );
 
-      console.log("Available slots:", available);
       setAvailableSlots(available);
     } catch (err) {
       console.error("Failed to load slots:", err);
