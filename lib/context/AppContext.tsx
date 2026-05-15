@@ -7,6 +7,7 @@ import React, {
   useState,
   useCallback,
 } from "react";
+import { usePathname } from "next/navigation";
 import { authService } from "@/lib/services/authService";
 import { initSocket, getSocket } from "@/lib/socket";
 
@@ -52,7 +53,20 @@ export const useAppContext = () => {
   return ctx;
 };
 
+const PUBLIC_AUTH_ROUTES = [
+  "/",
+  "/auth/login",
+  "/auth/sign-up",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/verify-email",
+];
+
+const isPublicRoute = (pathname: string) =>
+  PUBLIC_AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(route));
+
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -147,6 +161,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
+    if (isPublicRoute(pathname)) {
+      setIsLoadingUser(false);
+      return;
+    }
+
     load();
 
     return () => {
@@ -157,7 +176,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         socket.off("appointment:rescheduled");
       }
     };
-  }, [addNotification]);
+  }, [addNotification, pathname]);
 
   return (
     <AppContext.Provider
