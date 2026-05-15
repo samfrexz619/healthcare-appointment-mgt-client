@@ -4,10 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation'
 import { FileText, Home, User2, Calendar, Bell, Clock } from 'lucide-react';
 import Image from 'next/image';
+import { useAppContext } from '@/lib/context/AppContext';
 
 
 
 const SideNav: React.FC = () => {
+  const { user } = useAppContext();
+
   const navLinks = [
     {
       id: 1,
@@ -25,7 +28,8 @@ const SideNav: React.FC = () => {
       id: 3,
       path: '/dashboard/availability',
       routeName: 'Availability',
-      icon: <Clock />
+      icon: <Clock />,
+      allowedRoles: ['doctor'],
     },
     {
       id: 4,
@@ -50,6 +54,9 @@ const SideNav: React.FC = () => {
   ];
 
   const pathname = usePathname();
+  const visibleNavLinks = navLinks.filter(
+    (link) => !link.allowedRoles || link.allowedRoles.includes(user?.role || ''),
+  );
 
   return (
     <aside className='w-61.75 h-screen p-4'>
@@ -60,7 +67,7 @@ const SideNav: React.FC = () => {
         </Link>
 
         <ul className='pt-14 w-full space-y-5'>
-          {navLinks.map(link => (
+          {visibleNavLinks.map(link => (
             <li key={link.id} className={`h-12 transition-all duration-300 ease-in-out flex hover:bg-[#0F93A5]/20 ${link.path === pathname ? 'bg-[#0F93A5] text-white' : 'bg-transparent'}`}>
               {link.path === pathname && <i className='block h-full w-0.5 bg-[#09B0B7]' />}
               <Link href={link.path} className='flex h-full gap-4 w-full px-4 items-center'>
