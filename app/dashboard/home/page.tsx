@@ -133,9 +133,17 @@ const HomePage = () => {
 
         const slotDate = new Date(apt.slot_id.slot_date);
 
-        // Only completed appointments in the past
         return slotDate <= now && apt.status !== "cancelled";
       });
+
+      const pastAppointmentsForCompliance = appointments.filter(
+        (apt: Appointment) => {
+          if (!apt.slot_id || typeof apt.slot_id === "string") return false;
+
+          const slotDate = new Date(apt.slot_id.slot_date);
+          return slotDate <= now;
+        },
+      );
 
       // Update patient activities (for patients)
       if (user?.role === "patient") {
@@ -180,19 +188,21 @@ const HomePage = () => {
                   description: "Completed visits",
                 };
               case 3: {
-                // Calculate appointment compliance rate
-                const totalAppointments = upcoming.length + past.length;
-                const keptAppointments = past.filter(
-                  (apt: Appointment) => apt.status !== "cancelled",
+                const totalPastAppointments =
+                  pastAppointmentsForCompliance.length;
+                const keptAppointments = pastAppointmentsForCompliance.filter(
+                  (apt: Appointment) => apt.status === "completed",
                 ).length;
                 const complianceRate =
-                  totalAppointments > 0
-                    ? Math.round((keptAppointments / totalAppointments) * 100)
+                  totalPastAppointments > 0
+                    ? Math.round(
+                        (keptAppointments / totalPastAppointments) * 100,
+                      )
                     : 0;
                 return {
                   ...activity,
                   number: complianceRate + "%",
-                  description: `${keptAppointments}/${totalAppointments} kept`,
+                  description: `${keptAppointments}/${totalPastAppointments} kept`,
                 };
               }
               case 4:
