@@ -115,7 +115,7 @@ const DoctorDetail: React.FC<DoctorDetailProps> = ({ doctor }) => {
       </div>
       <section className="space-y-4">
         <p>
-          Doctor&apos;s Reviews <span>({reviews.length} Reviews)</span>
+          Doctor&#x27;s Reviews <span>({reviews.length} Reviews)</span>
         </p>
         {reviews.map((review) => (
           <div
