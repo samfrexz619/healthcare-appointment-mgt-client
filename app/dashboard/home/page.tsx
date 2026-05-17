@@ -365,7 +365,7 @@ const HomePage = () => {
               </p>
             </div>
             {user?.role === "patient" && (
-              <Link href="/appointments" className="no-underline">
+              <Link href="/dashboard/appointments" className="no-underline">
                 <Button className="bg-[#0F93A5] text-white hover:bg-[#0D7D8C] cursor-pointer px-5 rounded-lg h-14">
                   <Calendar />
                   <span className="font-bold text-lg">Book an Appointment</span>
