@@ -47,7 +47,7 @@ const ForgotPasswordForm = () => {
   };
 
   return (
-    <form className="w-full mt-10" onSubmit={handleSubmit(onSubmit)}>
+    <form className="w-full mt-10" noValidate onSubmit={handleSubmit(onSubmit)}>
       {/* Success */}
       {successMessage && (
         <div className="w-full bg-green-50 border border-green-300 text-green-700 text-sm rounded-lg px-4 py-3 mb-4">

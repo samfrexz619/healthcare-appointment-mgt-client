@@ -50,7 +50,7 @@ const LoginForm = () => {
   };
 
   return (
-    <form className="w-full mt-10" onSubmit={handleSubmit(onSubmit)}>
+    <form className="w-full mt-10" noValidate onSubmit={handleSubmit(onSubmit)}>
       {/* Server error */}
       {serverError && (
         <div className="w-full bg-red-50 border border-red-300 text-red-600 text-sm rounded-lg px-4 py-3 mb-4">
